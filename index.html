@@ -1,0 +1,1344 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>《人工智能导论》随机答题系统 | 课程模拟刷题平台</title>
+  <!-- Tailwind CSS Play CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+    /* Custom smooth transitions */
+    .fade-in {
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Custom elegant scrollbar styling for maximum workspace aesthetic */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #CBD5E1;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94A3B8;
+    }
+  </style>
+</head>
+
+<body class="bg-[#F8FAFC] text-[#1E293B] font-sans md:h-screen md:overflow-hidden flex flex-col min-h-screen">
+
+  <!-- HEADER BAR -->
+  <header class="bg-white border-b border-[#E2E8F0] shadow-sm shrink-0">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-indigo-600 text-white rounded-xl shadow-md">
+          <!-- Dice Icon SVG -->
+          <svg class="w-6 h-6 text-indigo-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-sm md:text-base font-bold text-[#0F172A] tracking-tight leading-tight">《人工智能导论》随机答题系统</h1>
+          <p class="text-[10px] md:text-xs text-[#64748B] mt-0.5">课程离线刷题平台 | 360道精选题库一键部署</p>
+        </div>
+      </div>
+
+      <button onclick="handleResetProgress()"
+        class="flex items-center gap-1 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-95 cursor-pointer shrink-0">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H17" />
+        </svg>
+        <span>重新开始</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN APP WRAPPER -->
+  <main
+    class="max-w-6xl mx-auto px-4 py-3 md:py-4 flex-1 md:overflow-hidden flex flex-col md:grid md:grid-cols-12 md:gap-6 w-full min-h-0 gap-4">
+
+    <!-- LEFT COLUMN (STATS & NAVIGATION) -->
+    <div class="md:col-span-4 shrink-0 flex flex-col gap-4 md:h-full justify-between pb-2">
+      <div class="flex flex-col gap-4">
+        <!-- STATS DASHBOARD -->
+        <section
+          class="bg-white p-4 rounded-3xl border border-[#E2E8F0] shadow-sm grid grid-cols-2 md:flex md:flex-col gap-2.5 w-full">
+          <h3
+            class="col-span-2 text-xs font-bold text-[#0F172A] pb-2 border-b border-slate-150 hidden md:block uppercase tracking-wider">
+            实时答题数据面板</h3>
+
+          <div
+            class="flex items-center gap-2 bg-blue-50 border border-blue-100 text-blue-700 px-3 py-2 rounded-2xl w-full">
+            <!-- Timer SVG -->
+            <svg class="w-4 h-4 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div class="flex flex-col min-w-0">
+              <span class="text-[9px] text-blue-550 scale-95 origin-left font-sans leading-none">用时累计</span>
+              <span id="stats-timer"
+                class="text-xs md:text-sm font-mono font-bold text-blue-900 leading-tight mt-0.5 truncate">0分0秒</span>
+            </div>
+          </div>
+
+          <div
+            class="flex items-center gap-2 bg-green-50 border border-green-100 text-green-700 px-3 py-2 rounded-2xl w-full">
+            <!-- Rate SVG -->
+            <svg class="w-4 h-4 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+            </svg>
+            <div class="flex flex-col min-w-0">
+              <span class="text-[9px] text-green-550 scale-95 origin-left font-sans leading-none">做题正确率</span>
+              <span id="stats-accuracy"
+                class="text-xs md:text-sm font-mono font-bold text-green-900 leading-tight mt-0.5 truncate">0%</span>
+            </div>
+          </div>
+
+          <div
+            class="flex items-center gap-2 bg-slate-50 border border-slate-200 text-slate-700 px-3 py-2 rounded-2xl w-full">
+            <!-- Clipboard SVG -->
+            <svg class="w-4 h-4 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            <div class="flex flex-col min-w-0">
+              <span class="text-[9px] text-slate-500 scale-95 origin-left font-sans leading-none">已答覆盖率</span>
+              <span id="stats-progress"
+                class="text-xs md:text-sm font-mono font-bold text-slate-900 leading-tight mt-0.5 truncate">0 / 360
+                题</span>
+            </div>
+          </div>
+
+          <div
+            class="flex items-center gap-2 bg-rose-50 border border-rose-100 text-rose-700 px-3 py-2 rounded-2xl w-full">
+            <!-- Folder SVG -->
+            <svg class="w-4 h-4 text-rose-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+            <div class="flex flex-col min-w-0">
+              <span class="text-[9px] text-rose-550 scale-95 origin-left font-sans leading-none">累计错题数</span>
+              <span id="stats-mistakes"
+                class="text-xs md:text-sm font-mono font-bold text-rose-900 leading-tight mt-0.5 truncate">0 题</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- NAVIGATION TABS -->
+        <div class="flex flex-col gap-3 bg-white p-3 rounded-3xl border border-[#E2E8F0] shadow-sm">
+          <h3
+            class="text-xs font-bold text-[#0F172A] pb-1.5 border-b border-slate-100 uppercase tracking-wider hidden md:block">
+            功能导航与跳转</h3>
+
+          <div class="flex flex-row md:flex-col gap-2 w-full">
+            <button onclick="switchTab('quiz')" id="tab-btn-quiz"
+              class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all bg-indigo-600 text-white shadow-sm cursor-pointer">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              <span>随机刷题</span>
+            </button>
+
+            <button onclick="switchTab('mistakes')" id="tab-btn-mistakes"
+              class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all text-[#475569] hover:bg-slate-50 hover:text-[#0F172A] relative cursor-pointer">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+              <span>智能错题本</span>
+              <span id="mistake-badge"
+                class="hidden absolute top-1 right-2 bg-rose-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold border-2 border-white">0</span>
+            </button>
+          </div>
+
+          <!-- Fuzzy Search Box (Supports text fuzzy query) -->
+          <div class="hidden md:flex flex-col gap-1 pt-2.5 border-t border-slate-100 relative">
+            <span class="text-[10px] text-slate-400 font-mono">找题模糊搜索：</span>
+            <div class="relative w-full">
+              <input id="fuzzy-search-input" type="text" placeholder="输入关键字搜索题库 / 题号..."
+                class="w-full pl-8 pr-3 py-2 bg-slate-50 border border-[#CBD5E1] focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 rounded-xl text-xs placeholder:text-slate-400 transition-all font-sans"
+                oninput="handleFuzzySearch(this.value, 'fuzzy-search-results')"
+                onfocus="handleFuzzySearch(this.value, 'fuzzy-search-results')" />
+              <!-- Search Icon -->
+              <svg class="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <!-- Floating Suggestions Dropdown -->
+            <div id="fuzzy-search-results"
+              class="hidden absolute left-0 right-0 top-full mt-1.5 max-h-64 overflow-y-auto bg-white border border-[#CBD5E1] rounded-xl shadow-lg z-50 divide-y divide-slate-100">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FOOTER HELPERS & KEYNOTES -->
+      <footer
+        class="p-4 bg-indigo-950 text-indigo-100 rounded-3xl text-left border border-indigo-900 shadow-sm flex flex-col gap-3.5 hidden md:flex shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="p-2 bg-indigo-900/60 rounded-xl text-indigo-400 shrink-0">
+            <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </div>
+          <div>
+            <h4 class="text-xs font-bold text-white">开发者</h4>
+            <p class="text-xs text-indigo-300 mt-0.5 font-mono">小红书@最伟大的CC</p>
+          </div>
+        </div>
+        <div
+          class="flex items-center justify-between text-[9px] border-t border-indigo-900/60 pt-2.5 text-indigo-300 font-mono">
+          <span>本地存储保存</span>
+          <span class="text-green-400 font-bold">● 100% 离线缓存运行</span>
+        </div>
+      </footer>
+    </div>
+
+    <!-- RIGHT COLUMN (VIEWPORTS WORKSPACE) -->
+    <div class="md:col-span-8 flex flex-col min-h-0 md:h-full transition-all md:overflow-hidden mt-4 md:mt-0 pr-0.5">
+
+      <!-- QUIZ VIEWPORT -->
+      <div id="quiz-view" class="flex flex-col gap-4 md:h-full md:overflow-hidden min-h-0">
+        <!-- DIAGNOSTIC QUESTION CARD -->
+        <div
+          class="bg-white rounded-3xl border border-[#E2E8F0] shadow-sm overflow-hidden text-left flex-1 flex flex-col min-h-0">
+
+          <div class="px-6 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0">
+            <span id="question-category"
+              class="px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-full border border-indigo-100">
+              分类加载中...
+            </span>
+            <span id="question-path-info" class="text-xs font-mono text-slate-500">
+              当前随机路径: 第 1 题 / 题号 No.1
+            </span>
+          </div>
+
+          <!-- Central scrollable container -->
+          <div class="p-6 md:p-8 flex-1 md:overflow-y-auto min-h-0">
+            <h2 class="text-base md:text-lg font-bold text-[#0F172A] leading-relaxed mb-4 md:mb-5">
+              <span id="question-num-prefix" class="text-indigo-600 font-mono font-semibold mr-2">No.1</span>
+              <span id="question-stem">题目内容加载中...</span>
+            </h2>
+
+            <!-- In desktop, layout option list into 2 columns grid to optimize physical spacing -->
+            <div id="options-block" class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
+              <!-- Options buttons populated dynamically -->
+            </div>
+
+            <!-- Explanation Panel (nested inside scroll so it expands gracefully) -->
+            <div id="explanation-panel"
+              class="hidden p-5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl fade-in mt-4">
+              <div class="flex items-center justify-between gap-4 pb-2.5 mb-3 border-b border-slate-200">
+                <div class="flex items-center gap-2">
+                  <span id="grading-badge" class="flex items-center gap-1 font-bold text-xs px-2.5 py-1 rounded-lg">
+                    <!-- Status badge -->
+                  </span>
+                  <span class="text-xs font-mono text-slate-500">
+                    你的选择: <strong id="user-selected-opt" class="text-slate-800">无</strong>
+                  </span>
+                </div>
+                <div class="text-xs font-mono font-bold text-slate-800">
+                  标准答案: <span id="correct-answer-badge"
+                    class="bg-green-600 text-white rounded-md px-2 py-0.5 ml-1">A</span>
+                </div>
+              </div>
+              <div>
+                <p class="text-[11px] font-bold text-indigo-700 uppercase tracking-wider mb-1 font-mono">知识考点精析:</p>
+                <p id="explanation-text" class="text-xs md:text-sm text-[#475569] leading-relaxed">
+                  解析具体内容极速呈现。
+                </p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- LOWER CONTROLS (pinned inside right panel workspace, shrink-0) -->
+        <div
+          class="flex items-center justify-between bg-white px-5 py-4 rounded-2xl border border-[#E2E8F0] shadow-sm shrink-0">
+          <div class="flex gap-2">
+            <button onclick="handlePrevQuestion()" id="prev-btn"
+              class="px-4 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 hover:text-slate-900 text-xs md:text-sm font-medium rounded-xl transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+              </svg>
+              <span>上一题</span>
+            </button>
+
+            <button onclick="handleNextQuestion()" id="next-btn"
+              class="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-150 text-indigo-700 text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer">
+              <span>下一题</span>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+
+          <button onclick="generateNewRandomJump()"
+            class="px-4 py-2 bg-[#0F172A] hover:bg-slate-800 text-white text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 cursor-pointer active:scale-95">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H17" />
+            </svg>
+            <span>随机换一题</span>
+          </button>
+        </div>
+
+        <!-- MOBILE RESPONSIVE FUZZY SEARCH BAR -->
+        <div class="sm:hidden bg-white p-3.5 rounded-2xl border border-slate-200 flex flex-col gap-2 relative">
+          <div class="flex items-center justify-between gap-2 font-mono">
+            <span class="text-xs text-slate-500 shrink-0">找题模糊搜索:</span>
+            <div class="relative flex-1 min-w-0">
+              <input id="fuzzy-search-input-mobile" type="text" placeholder="搜索题目、解析或考点..."
+                class="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs placeholder:text-slate-400 font-sans"
+                oninput="handleFuzzySearch(this.value, 'fuzzy-search-results-mobile')"
+                onfocus="handleFuzzySearch(this.value, 'fuzzy-search-results-mobile')" />
+              <!-- Search Icon -->
+              <svg class="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor"
+                viewBox="0 0 24 24" style="top: 10px;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+          </div>
+          <!-- Mobile suggestions dropdown -->
+          <div id="fuzzy-search-results-mobile"
+            class="hidden absolute left-0 right-0 top-full mt-1.5 max-h-56 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-lg z-50 divide-y divide-slate-100">
+          </div>
+        </div>
+      </div>
+
+      <!-- MISTAKES TAB VIEWPORT -->
+      <div id="mistakes-view"
+        class="hidden bg-white p-6 rounded-3xl border border-[#E2E8F0] shadow-sm text-left md:h-full flex flex-col md:overflow-hidden min-h-0">
+        <div class="pb-3 border-b border-rose-100 flex items-center justify-between flex-wrap gap-2 shrink-0">
+          <div>
+            <h2 class="text-base md:text-lg font-bold text-slate-900 flex items-center gap-2 leading-tight">
+              <span class="p-1 px-2.5 bg-rose-100 text-rose-600 rounded-lg text-xs">错题</span>
+              <span>错题复习本 (<span id="mistakes-count-badge">0</span> 题)</span>
+            </h2>
+            <p class="text-[10px] md:text-xs text-slate-400 mt-1">作答错误的题目会在此自动归档。攻克错题是提分的金捷径！</p>
+          </div>
+          <button onclick="clearAllMistakes()" id="clear-mistakes-btn"
+            class="text-xs bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 px-3 py-1.5 rounded-lg transition-all font-semibold active:scale-95 cursor-pointer shrink-0">
+            清空错题记录
+          </button>
+        </div>
+
+        <!-- Mistakes lists internally scrollable as well -->
+        <div id="mistakes-list-container" class="flex flex-col gap-4 overflow-y-auto pr-1 flex-1 min-h-0 mt-4">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- 360 COMPRESSED QUESTIONS DATA & MAIN VIEW ENGINE SCRIPT -->
+  <script>
+    // 360 Complete Compressed Questions
+    const QUESTIONS_DATA = [
+      { id: 1, c: "AI历史与概念", s: "图灵于 ____ 年发表论文《计算与智能》，提出图灵测试。", o: ["1940", "1950", "1960", "1970"], a: "B", e: "阿兰·图灵于1950年发表了具有里程碑意义的论文《计算机器与智能》，并在其中首次提出了著名的‘模仿游戏’（即图灵测试），用以探讨机器是否具备人类难以区分的智能行为表现。" },
+      { id: 2, c: "AI历史与概念", s: "截至目前，人工智能经历了 ____ 次低谷。", o: ["一", "二", "三", "四"], a: "B", e: "人工智能自诞生以来，由于技术瓶颈或期望过高，分别在20世纪70年代和80年代末经历了两次重大的学术与资金低谷期，在历史上被称为两次‘AI寒冬’。" },
+      { id: 3, c: "AI历史与概念", s: "图灵测试要求，超过 ____ 的测试者不能确定出被测试者是人还是机器。", o: ["10%", "20%", "30%", "40%"], a: "C", e: "图灵在最初设计测试时设定，如果在一系列各为五分钟的问答测试中，机器能让超过30%的人类裁判裁判无法准确分辨其是人类还是机器，则认为该机器通过了智能测试。" },
+      { id: 4, c: "AI历史与概念", s: "以下不属于图灵机组件的是 ____ 。", o: ["读写头", "控制器", "卡带", "仿真器"], a: "D", e: "经典图灵机作为一种理想化的计算模型，核心组件包括无限长的输入输出带（纸带/卡带）、读写头、控制器（有限状态机），仿真器并不属于其原生的理论物理组件。" },
+      { id: 5, c: "大脑与认知神经科学", s: "下面关于神经元的说法，错误的是 ____ 。", o: ["神经元结构上大致都可分成细胞体和神经突两部分", "神经突又分树突 (Dendrites) 和轴突 (Axon) 两种", "树突接受刺激 ( 神经冲动 )", "轴突接受刺激 ( 神经冲动 )"], a: "D", e: "在生物神经元中，树突专门负责接收来自其他神经元的输入信号（刺激），细胞体负责整合信息，而轴突则负责将生成的神经冲动向外传导传出，因此轴突不负责接收刺激。" },
+      { id: 6, c: "AI历史与概念", s: "“ 人工智能 ” 这一概念诞生于 ____ 会议。", o: ["达特茅斯", "华盛顿", "索尔维", "雅尔塔"], a: "A", e: "1956年在美国达特茅斯学院举行的学术研讨会（达特茅斯会议）被广泛公认为人工智能作为独立学术领域诞生的标志性事件，‘人工智能’这一命名也在此被正式提出。" },
+      { id: 7, c: "AI历史与概念", s: "摩尔定律指出， PC  芯片每 ____ 个月性能提升一倍。", o: ["6", "12", "16", "18"], a: "D", e: "摩尔定律是由英特尔创始人之一戈登·摩尔提出的经验法则，指出集成电路上可容纳的晶体管数目和微处理器的计算性能大约每18个月（即1.5年）便会翻一倍。" },
+      { id: 8, c: "AI历史与概念", s: "专家系统是在第 ____ 次  AI  崛起时出现的。", o: ["一", "二", "三", "四"], a: "B", e: "以知识库和推理机为核心的专家系统在20世纪70年代末至80年代全面兴起，成功解决了一系列特定领域的专业问题，推动了人工智能的第二次发展高潮。" },
+      { id: 9, c: "AI历史与概念", s: "下面不属于人工智能三大学派的是 ____ 。", o: ["符号主义  Symbolism", "连接主义  Connectionism", "行为主义  Behaviorism", "生成主义  Generativism"], a: "D", e: "人工智能发展史上形成了三大经典学术学派，即符号主义（逻辑演绎）、连接主义（网络仿生）和行为主义（控制反馈）。生成主义并非并列的三大学派之一。" },
+      { id: 10, c: "AI历史与概念", s: "专家系统属于人工智能 ____ 学派的产物。", o: ["符号主义  Symbolism", "连接主义  Connectionism", "行为主义  Behaviorism", "生成主义  Generativism"], a: "A", e: "专家系统是典型的符号主义学派产物，它主张智能的核心是符号演算与数理逻辑，通过显式编码的规则知识库和推理机来模拟人类专家的逻辑决策过程。" },
+      { id: 11, c: "AI历史与概念", s: "感知机属于人工智能 ____ 学派的产物。", o: ["符号主义  Symbolism", "连接主义  Connectionism", "行为主义  Behaviorism", "生成主义  Generativism"], a: "B", e: "感知机作为早期经典的人工神经网络模型，通过模拟生物脑神经元的拓扑连接和突触权重自适应调整来实现学习，是连接主义学派的早期代表成果。" },
+      { id: 12, c: "AI历史与概念", s: "马文 · 明斯基 (Marvin Minsky) 和西蒙 · 派珀特 (Seymour Papert)  出版的《感知器：计算几何简介》指出， ____ 层的神经网络无法解决不可线性分割的问题 ( 如异或问题 ) 。", o: ["一", "二", "三", "四"], a: "A", e: "1969年明斯基和派珀特出版了《感知器》一书，通过严密的数学证明指出单层神经网络（即只有一层的感知机）无法解决异或（XOR）等非线性可分问题，直接导致连接主义研究陷入第一次低谷。" },
+      { id: 13, c: "机器学习基础", s: "下面的四个异或 ( ⊕ ) 计算，正确的是 ____ 。", o: ["0  ⊕  0 = 1", "0  ⊕  1 = 0", "1  ⊕  0 = 0", "1  ⊕  1 = 0"], a: "D", e: "异或（XOR）是经典的布尔逻辑运算，其核心逻辑规则是‘相同为0，不同为1’。因此，1异或1的结果为0，即1 ⊕ 1 = 0。" },
+      { id: 14, c: "AI历史与概念", s: "“AlphaGo” 称称霸围棋是第 ____ 次  AI  崛起的典型示例。", o: ["一", "二", "三", "四"], a: "C", e: "谷歌DeepMind团队研发的AlphaGo于2016年和2017年先后击败人类顶尖围棋世界冠军，这是以深度学习、大数据和强算力为核心驱动的第三次人工智能崛起浪潮的标志性事件。" },
+      { id: 15, c: "AI历史与概念", s: "知识图谱是人工智能 ____ 学派的代表性成果。", o: ["符号主义  Symbolism", "连接主义  Connectionism", "行为主义  Behaviorism", "生成主义  Generativism"], a: "A", e: "知识图谱以结构化的实体及关系（三元组）来显式表达客观世界的概念与事实，是符号主义学派在现代大数据知识工程与语义网技术中的延续与发展成果。" },
+      { id: 16, c: "AI历史与概念", s: "深度学习是人工智能 ____ 学派的代表性成果。", o: ["符号主义  Symbolism", "连接主义  Connectionism", "行为主义  Behaviorism", "生成主义  Generativism"], a: "B", e: "深度学习通过搭建多层非线性深度人工神经网络来自动从海量数据中提取分布式特征，本质上是连接主义学派在现代算力和数据爆发时代演进出的巅峰繁荣。" },
+      { id: 17, c: "AI历史与概念", s: "人工智能 ____ 学派起源于控制论。", o: ["符号主义  Symbolism", "连接主义  Connectionism", "行为主义  Behaviorism", "生成主义  Generativism"], a: "C", e: "行为主义学派（又称进化主义或控制论学派）主张智能体应通过与环境的动态交互、动作反馈和自适应进化来体现智能，其理论方法直接起源于控制论。" },
+      { id: 18, c: "AI历史与概念", s: "人工智能 ____ 学派起源于数理逻辑和逻辑推理。", o: ["符号主义  Symbolism", "连接主义  Connectionism", "行为主义  Behaviorism", "生成主义  Generativism"], a: "A", e: "符号主义学派（又称逻辑主义学派）认为智能的基本单元是符号，认知过程就是符号演算，其理论根基深植于数理逻辑、一阶谓词逻辑和形式化推理。" },
+      { id: 19, c: "AI历史与概念", s: "人工智能 ____ 学派起源于仿生学，特别是人脑模型的研究。", o: ["符号主义  Symbolism", "连接主义  Connectionism", "行为主义  Behaviorism", "生成主义  Generativism"], a: "B", e: "连接主义学派（又称心理学派或生理学派）主张智能起源于低级单元的复杂互联，其方法论直接起源于微观仿生学以及人脑解剖学的神经网络模型研究。" },
+      { id: 20, c: "AI历史与概念", s: "人工智能 ____ 学派主张人工智能应从功能模拟入手。", o: ["符号主义  Symbolism", "连接主义  Connectionism", "行为主义  Behaviorism", "生成主义  Generativism"], a: "A", e: "符号主义学派主张从人类宏观思维的功能模拟入手，通过对知识进行显式符号编码和规则化演绎推导，来复现人类的理性思考与解题能力。" },
+      { id: 21, c: "AI历史与概念", s: "人工智能 ____ 学派主张人工智能应从结构设计入手。", o: ["符号主义  Symbolism", "连接主义  Connectionism", "行为主义  Behaviorism", "生成主义  Generativism"], a: "B", e: "连接主义学派主张人工智能应当从大脑皮层的微观神经网络结构设计入手，通过底层人工神经元的多层密互联与分布式权重自适应调整来实现智能表现。" },
+      { id: 22, c: "AI历史与概念", s: "人工智能 ____ 学派主张利用机器对环境作用后的反馈来实现智能进化。", o: ["符号主义  Symbolism", "连接主义  Connectionism", "行为主义  Behaviorism", "生成主义  Generativism"], a: "C", e: "行为主义学派强调智能体在真实或模拟物理环境中的演进，通过‘感知-动作-环境负反馈’的持续循环闭环来调整行为策略，从而实现不依赖先验知识的自适应智能进化。" },
+      { id: 23, c: "深度学习与大模型", s: "以下四个深度学习模型中，最早被提出的是 ____ 。", o: ["ZeilerNet", "GoogLeNet", "AlexNet", "ResNet"], a: "C", e: "在给出的图像分类CNN模型中，AlexNet发布于2012年，彻底开启了深度学习大浪潮；ZeilerNet(ZFNet)发布于2013年；GoogLeNet发布于2014年；ResNet发布于2015年。因此最早的是AlexNet。" },
+      { id: 24, c: "AI历史与概念", s: "下面哪个模型在  2016  年  3  月与围棋世界冠军李世石进行围棋人机大战并以  4 比  1  获胜 ____ 。", o: ["深蓝", "AlexNet", "ResNet", "AlphaGo"], a: "D", e: "2016年3月，Google DeepMind团队研发的围棋智能体AlphaGo在备受瞩目的围棋人机大战中，以4比1的绝对优势击败了人类世界冠军李世石，成为第三次AI浪潮爆发的核心里程碑。" },
+      { id: 25, c: "深度学习与大模型", s: "以下由  OpenAI  提出的大模型中，参数量在  15  亿级别的是 ____ 。", o: ["GPT-1", "GPT-2", "GPT-3", "ChatGPT"], a: "B", e: "OpenAI于2019年发布的生成式预训练大语言模型GPT-2，其最大版本的网络参数量达到了15亿（1.5B）级别，展现了强大的多任务零样本泛化文本生成能力。" },
+      { id: 26, c: "深度学习与大模型", s: "以下四个大模型中，最早被提出的是 ____ 。", o: ["GPT-2", "BERT", "Turing-NLP", "SWITCH T"], a: "B", e: "谷歌（Google）于2018年10月发布了双向编码表征预训练模型BERT，掀起了自然语言处理领域的预训练高潮，早于2019年发布的GPT-2、2020年的Turing-NLG以及2021年的Switch Transformer。" },
+      { id: 27, c: "AI历史与概念", s: "不属于新一代人工智能提出的 “ 三元空间 ” 结构的是 ____ 。", o: ["信息网络", "仿生学", "人类", "物理"], a: "B", e: "现代新一代人工智能认为其所面临的计算环境和应用背景已由传统的‘物理空间-人类社会’二元空间，全面演变为‘物理空间、人类社会、信息网络空间’交叉融合的三元空间结构。仿生学属于技术手段而非空间成分。" },
+      { id: 28, c: "AI历史与概念", s: "2017  年，国务院印发了《新一代人工智能发展规划》。以下不属于中国新一 代人工智能战略布局所需的基础理论是 ____ 。", o: ["大数据智能", "人机混合智能", "初级机器学习", "群体智能"], a: "C", e: "中国《新一代人工智能发展规划》重点布局的基础理论包括大数据智能、跨媒体智能、群体智能、混合增强智能和自主智能系统等，基础战略并不包含‘初级机器学习’这一提法。" },
+      { id: 29, c: "大数据智能", s: "下面关于大数据智能的层级表示，正确的是 ____ 。", o: ["数据 -> 知识 -> 决策", "决策 -> 知识 -> 数据", "知识 -> 数据 -> 决策", "数据 -> 决策 -> 知识"], a: "A", e: "大数据智能的标准核心技术演进路径为：系统从底层的海量碎片化、无结构‘数据’中提炼和建模出结构化‘知识’，并最终通过知识推理与计算服务于高层的智能‘决策’。" },
+      { id: 30, c: "深度学习与大模型", s: "我国自 ____ 年进入大模型快速发展期。", o: ["2016", "2018", "2020", "2022"], a: "C", e: "2020年起，伴随着智源研究院、百度等机构在国内相继发布百亿、千亿参数规模的早期预训练大模型，我国正式迈入了大模型技术的快速爆发与自主研发攻坚期。" },
+      { id: 31, c: "大数据智能", s: "下面不属于大数据智能流程的是 ____ 。", o: ["数据", "决策", "知识", "思想"], a: "D", e: "大数据智能的工程链条与技术管线紧密围绕‘数据资产化、知识图谱化、决策智能化’这一客观闭环展开，‘思想’属于人类主观精神范畴，不作为数字化系统的流水流程。" },
+      { id: 32, c: "深度学习与大模型", s: "下面不属于国产大模型的是 ____ 。", o: ["Moss", "WeLM", "GLM", "Gemma"], a: "D", e: "Moss（复旦大学）、WeLM（腾讯）、GLM（清华/智谱）均为我国本土主导研发或开源的优秀国产大模型，而Gemma是由谷歌（Google）发布的开源轻量级大模型系列。" },
+      { id: 33, c: "深度学习与大模型", s: "下列的  DeepSeek  模型中，强调推理与思维链的是 ____ 。", o: ["DeepSeek‐V2", "DeepSeek‐V3", "DeepSeek‐R1", "以上模型都不是"], a: "C", e: "DeepSeek-R1是深度求索（DeepSeek）专门推出的高阶推理模型，其核心特征是在训练中全面引入大规模强化学习，使其能自主生成长思维链（Chain of Thought）来攻克复杂数理和逻辑难题。" },
+      { id: 34, c: "深度学习与大模型", s: "下列关于  DeepSeek  的说法，错误的是 ____ 。", o: ["DeepSeek  是国产大模型", "DeepSeek  目前主要分为  V  系列与  R  系列", "DeepSeek  在链式思维和复杂逻辑任务上与  GPT-4 、 Claude  等相抗衡", "DeepSeek  完全闭源"], a: "D", e: "DeepSeek（深度求索）秉持开源开放的科技理念，其核心的通用V系列和推理R系列模型均向全球开源社区开放了模型权重及完整的技术报告，并非完全闭源。" },
+      { id: 35, c: "人机混合智能", s: "在人机混合智能中，不属于人类智能提供的思维是 ____ 。", o: ["抽象思维：逻辑与推理", "形象思维：想象与创造", "直觉思维：灵感与顿悟", "幻觉思维：发散与空想"], a: "D", e: "在人机混合智能系统中，人类智能的核心贡献主要体现在高阶的抽象逻辑推理、形象思维想象力以及直觉顿悟灵感，‘幻觉思维’常指生成模型的不合逻辑虚构，并非人类智能在系统中的良性贡献。" },
+      { id: 36, c: "人机混合智能", s: "在人机混合智能中，不属于机器智能提供的能力是 ____ 。", o: ["有限的逻辑与推理能力", "神经网络的快速推断能力", "多模态感知", "情绪与情感"], a: "D", e: "现代机器智能能够提供卓越的海量数据快速推断能力、多模态融合感知以及限定规则下的强大逻辑演练，但其不具备基于生物物理和神经内分泌基础的原生‘情绪与情感’。" },
+      { id: 37, c: "人机混合智能", s: "在人机混合智能中，不属于人类智能对机器智能提供的指导的是 ____ 。", o: ["知识灌输", "技能强化", "指令引导", "海量参数寻优"], a: "D", e: "在人机增强系统中，人类通过知识灌输、规则强化和指令引导来对机器提供逻辑上游的约束和指导，而‘海量参数寻优’完全是由计算机底层优化算法利用硬件算力在连续空间中自动迭代完成的。" },
+      { id: 38, c: "群体智能", s: "以下关于群体智能历史起源的说法，错误的是 ____ 。", o: ["群体智慧由英国统计学家  Francis Galton  提出", "基于群体智慧展现的智能在很多任务中往往超过少数个体", "基于群体智慧展现的智能在很多任务中甚至可以超过专家的能力", "群体智慧与社会学、认知学无关"], a: "D", e: "群体智能的思想不仅局限于计算机科学，更深刻地与生物仿生学、人类社会学、组织行为学以及认知心理学交织在一起，用以研究非集中式自组织个体如何通过简单交互涌现出高阶智慧。" },
+      { id: 39, c: "AI历史与概念", s: "以下不属于人工智能目前的主要模式的是 ____ 。", o: ["数据", "操作系统", "算法 ( 模型 )", "算力"], a: "B", e: "当代人工智能高速发展的核心驱动要素常被称为‘三驾马车’，即数据（原材料）、算法/模型（驱动引擎）和算力（动力基石）。操作系统属于计算机通用基础软件，非AI主要驱动模式。" },
+      { id: 40, c: "强化学习与智能体", s: "下面关于基于大模型的智能体社会的说法，错误的是 ____ 。", o: ["每个  Agent  都有固定的角色", "每个  Agent  都有自己的  LLM  模型", "Agent  无需记忆", "Agent  间可以相互协作"], a: "C", e: "在基于大模型的智能体（Agent）系统或群体社会中，智能体必须包含记忆（Memory）模块（包括保存感知历史的长短期记忆），才能维持长程交互的上下文一致性并做出连贯、理性的决策。" },
+      { id: 41, c: "大脑与认知神经科学", s: "神经系统的基本组成单元是 ____ 。", o: ["神经元", "细胞", "突触", "大脑"], a: "A", e: "生物神经系统以及人工神经网络中最基本、最核心的结构与高级信息处理基本单元均为神经元（Neuron，即神经细胞）。" },
+      { id: 42, c: "大脑与认知神经科学", s: "神经元的主要构成包括树突、细胞体和 ____ 。", o: ["突触", "轴突", "细胞核", "髓鞘"], a: "B", e: "一个经典生物神经元在解剖学形态结构上主要由三大核心部分构成：专门接收信号输入的树突（Dendrites）、用于信息整合的细胞体（Soma）以及用于长距离传导输出信号的轴突（Axon）。" },
+      { id: 43, c: "大脑与认知神经科学", s: "人类大脑中大约有 ____ 个神经元。", o: ["100  亿", "450  亿", "100  万亿", "860  亿"], a: "D", e: "根据定量神经解剖学的现代精密测算，成熟人类大脑的脑皮层及皮层下神经核团中，平均包含大约860亿个神经元细胞。" },
+      { id: 44, c: "大脑与认知神经科学", s: "人类大脑中大约有 ____ 条神经连接。", o: ["100  万亿", "1000  万亿", "860  亿", "100  亿"], a: "A", e: "由于每个神经元均可以通过极其繁复的突触分支与成千上万个其他神经元建立互联，全脑由突触构成的复杂神经连接总数规模可达大约100万亿条。" },
+      { id: 45, c: "大脑与认知神经科学", s: "1873  年，意大利神经生物学家  Camillo Golgi  发明了 ____ 的方法，第一次在 显微镜下观察到了神经细胞和神经胶质细胞。", o: ["神经元银染色法", "单细胞记录法", "电子显微镜观察", "荧光标记法"], a: "A", e: "意大利科学家高尔基（Golgi）发明的‘铬酸银染色法’（即神经元银染色法）能够随机让极少数神经元完整显色，使得人类首次在显微镜下完整看清了神经细胞的精细全貌与树突突触分支。" },
+      { id: 46, c: "大脑与认知神经科学", s: "1897  年，英国科学家  C.S.Sherriton  提出用 ____ 来描述一个神经元与另一个神 经元之间的接触部位，并认为它的主要作用是让两个神经元进行信息传递，使得 思维、推理、联想等复杂的脑机能成为可能。", o: ["轴突", "突触", "细胞膜", "髓鞘"], a: "B", e: "英国神经科学家谢灵顿（Sherrington）首次提出了‘突触’（Synapse）这一关键解剖学概念，用以定性描述神经元之间实现化学或电信号跨细胞定向传递和信息交互的接触特异性部位。" },
+      { id: 47, c: "大脑与认知神经科学", s: "大脑最外边有一层颜色较深的褶皱结构，厚度约  2 ～ 3  厘米，面积约  2200  平 方厘米，它是整个大脑神经细胞最集中的区域，被认为是一切智能的来源地，这 部分结构被称为 ____ 。", o: ["白质", "灰质", "脑膜", "脑脊液"], a: "B", e: "大脑皮层表面因高度聚集了高密度的非绝缘神经元细胞体，在固标标本外观上呈现较深的灰色，被称为‘灰质’，它是全脑管辖高级认知、逻辑推演与一切高级智能的源泉。" },
+      { id: 48, c: "大脑与认知神经科学", s: "____ 在大脑皮层的下面，是神经细胞的轴突所在，它将大脑的不同区域以及 大脑和脊髓等其他神经系统部分连接起来，就像是大脑的  “ 通信网络 ” 。", o: ["白质", "灰质", "脑膜", "脑脊液"], a: "A", e: "位于大脑皮层深层的‘白质’区域富含大量带有绝缘髓鞘的神经纤维束（即轴突），在外观上呈现亮白色，主要掌管全脑不同功能功能区以及脑与脊髓之间长距离的高速通信网络连接。" },
+      { id: 49, c: "大脑与认知神经科学", s: "____ 充满在脑室系统、蛛网膜下腔和脊髓中央管内，在大脑和脊髓周围形成 了一个液体缓冲层，就像一个柔软的  “ 垫子 ” ，能够减轻头部受到外伤时对脑和 脊髓的冲击力。同时也为脑组织提供营养物质，带走代谢废物。", o: ["白质", "灰质", "脑膜", "脑脊液"], a: "D", e: "脑脊液（CSF）是一种无色透明液体，充盈于脑室及蛛网膜下腔中，在大脑和脊髓周围形成物理液体缓冲层（液体软垫保护），同时起到维持颅内压、输送神经营养及排出代谢废物的生理功能。" },
+      { id: 50, c: "大脑与认知神经科学", s: "大脑的解剖结构可以分为 “ 三沟五叶 ” 。 五叶指额叶、顶叶、颞叶、枕叶及 岛叶。其中，大脑的视觉皮层位于 ____ ，是大脑皮层中处理视觉信息的关键区域。", o: ["额叶", "顶叶", "颞叶", "枕叶"], a: "D", e: "初级视觉皮层（V1区）以及高级视觉中枢均精密定位掌管于大脑后部的枕叶（Occipital Lobe）皮层，专门负责接收并解析由视网膜经视路传入的各阶空间图像及色彩视觉信息。" },
+      { id: 51, c: "大脑与认知神经科学", s: "大脑的解剖结构可以分为 “ 三沟五叶 ” ，这里面的五叶指额叶、顶叶、颞叶、 枕叶及岛叶。其中，与听觉功能相关的脑区主要位于 ____ 。", o: ["额叶", "顶叶", "颞叶", "枕叶"], a: "C", e: "初级听觉皮层以及掌管听觉语言深度解码的关联脑区主要定位组装于大脑两侧的颞叶（Temporal Lobe）脑区（如颞上回区域），专门负责声音信号的解码加工。" },
+      { id: 52, c: "大脑与认知神经科学", s: "源自眼睛的视觉输入经过丘脑的外侧膝状核，首先传递至大脑的初级视觉皮 层（ primary visual cortex ）。初级视觉皮层又称  V1  区，位于 ____ 。", o: ["额叶", "顶叶", "颞叶", "枕叶"], a: "D", e: "视网膜捕获的光信号经视神经传入丘脑的外侧膝状核（LGN）进行中继后，第一站会直接投射到位于大脑枕叶后端的距状嵴周围皮层，即初级视觉皮层（又称V1区）。" },
+      { id: 53, c: "大脑与认知神经科学", s: "20  世纪  50  年代，大卫 · 休伯尔（ David Hubel ）和托斯坦 · 维瑟尔（ Torsten Wiesel ） 研究发现，猫的视觉皮层中的简单细胞和复杂细胞通过卷积和下采样的方式对视 觉信息进行 ____ 处理。其中，简单细胞首先对基本的视觉特征进行提取，然后复 杂细胞对简单细胞提供的局部信息进行整合，形成更为抽象和高级的视觉表示。 这一视觉系统的信息 ____ 加工方式在上世纪  80  年代初被日本科学家福岛邦彦借 鉴设计了神经网络模型  Neocognitron ，是现代  CNN  的雏形。", o: ["集中", "分层", "分布式"], a: "B", e: "Hubel和Wiesel的诺奖级发现证明了生物视觉系统采用‘分层’（Hierarchical）特征提取机制，即从低级局部边缘走向到高级抽象几何构型逐层级复合并行处理，这直接启发了现代CNN的特征金字塔架构设计。" },
+      { id: 54, c: "大脑与认知神经科学", s: "视觉信息在传递到大脑初级视觉皮层之后，开始被两条独立的视觉通路分别 进行处理：其中一条被称为 ____ ，也叫 “what”  通路，主要负责物体内容的感知 和识别。", o: ["背侧视觉通路", "腹侧视觉通路", "旁侧视觉通路", "内侧视觉通路"], a: "B", e: "视觉双通路理论中，向颞叶前下部延伸的‘腹侧视觉通路’（Ventral Stream）主要编码和解码物体的纹理、色彩、精细形态，负责辨识目标的语义类别，即‘是什么’（What通路）。" },
+      { id: 55, c: "大脑与认知神经科学", s: "视觉信息在传递到大脑初级视觉皮层之后，开始被两条独立的视觉通路分别 进行处理：其中一条被称为 ____ ，也叫 “where” 通路，主要负责物体空间位置的 感知和识别。", o: ["背侧视觉通路", "腹侧视觉通路", "旁侧视觉通路", "内侧视觉通路"], a: "A", e: "视觉双通路理论中，向顶叶延伸的‘背侧视觉通路’（Dorsal Stream）主要处理和跟踪物体的三维空间坐标、方位、运动轨迹以及视导向动作控制，负责感知目标‘在哪里’（Where通路）。" },
+      { id: 56, c: "大脑与认知神经科学", s: "在人的大脑中存在着多个专门加工某一特定类别物体的脑区，这一现象被称 为物体识别的 ____ 加工理论。", o: ["特异性", "整体性", "分布式"], a: "A", e: "物体识别的‘特异性加工理论’（Domain Specificity）主张人脑在长期进化中针对高度攸关生存的高频特定视觉刺激（如面孔、文字、工具等）分化出了高度特异性、独立的专用功能模块（如梭状回面孔区FFA）。" },
+      { id: 57, c: "大脑与认知神经科学", s: "从初级听觉皮层出发，大脑可分离出两条主要的独立传导路径进行声音的感 知和识别。其中，腹侧听觉通路，又称 “what” 通路，主要负责声音  ____ 的识别。", o: ["内容", "方向", "大小", "频率"], a: "A", e: "听觉系统的“腹侧听觉通路”向前下延伸进入颞叶区域，其核心的神经机能是解码声学信号的声调、声纹属性与语义内涵，即专门负责辨识声音的语言‘内容’（What）。" },
+      { id: 58, c: "大脑与认知神经科学", s: "从初级听觉皮层出发，大脑可分离出两条主要的独立传导路径进行声音的感 知和识别。其中，听觉背侧通路，又称 “where” 通路，其主要功能是声音的  ( )", o: ["内容识别", "定位", "大小识别", "频率识别"], a: "B", e: "听觉系统的“背侧听觉通路”向后上方延伸进入顶叶并与运动皮层交互，主要通过精密整合两耳间的时间差（ITD）和强度差（ILD）信号，来实现对声源在外部三维空间中的精确‘定位’（Where）。" },
+      { id: 59, c: "大脑与认知神经科学", s: "我们大脑中与语言功能相关的脑区主要位于 ____ 。", o: ["左半球大脑", "右半球大脑", "两侧大脑且均匀分布"], a: "A", e: "人类的大脑语言高级机能表现出高度的优势半球倾向，在超过95%的右利手个体以及绝大多数左利手个体中，负责语言产生、语法加工与语义理解的中枢均显著定位于‘左半球大脑’。" },
+      { id: 60, c: "大脑与认知神经科学", s: "大脑中有两个重要的脑区与语言的认知活动关系密切，分别是  Broca  脑区和 Wernicke  脑区，其中， Broca  脑区在 ____ 加工中起重要作用。", o: ["语法", "声音", "音频", "语义"], a: "A", e: "布罗卡区（Broca's area）位于左侧额下回后部，主要管辖语言的运动表达表达表达策划与核心‘语法’结构的流畅组织输出，受损会导致表达性失语症（能听懂但无法自主流利说出）。" },
+      { id: 61, c: "大脑与认知神经科学", s: "大脑中有两个重要的脑区与语言的认知活动关系密切，分别是  Broca  脑区和 Wernicke  脑区，其中， Wernicke  脑区在 ____ 中起重要作用。", o: ["语法加工", "声音识别", "音频辨识", "语义理解"], a: "D", e: "威尔尼克区（Wernicke's area）位于左侧颞上回后部，主要管辖语言输入流的‘语义理解’与深度概念认知，受损会导致感觉性失语症（虽能流利发音说话但语无伦次、缺乏逻辑，且完全听不懂他人言语）。" },
+      { id: 62, c: "大脑与认知神经科学", s: "根据信息维持时间的长短，记忆可以分为三种类型：感觉记忆、短时记忆和 长时记忆。其中， ____ 是指信息在几秒到几分钟内保持的记忆，通常需要不断的 复述才能维持。", o: ["感觉记忆", "短时记忆", "长时记忆"], a: "B", e: "短时记忆（Short-term Memory）的信息维持时间通常在数秒到数分钟内，其组块容量非常有限（经典理论为7±2个），必须通过意识层面的主动复述才能在工作内存中维持不丢失。" },
+      { id: 63, c: "大脑与认知神经科学", s: "按照信息维持时间的长短，记忆可以分为三种类型：感觉记忆、短时记忆和 长时记忆。其中， ____ 是指信息可以保持几天到数十年的记忆，是记忆系统中容 量最大且最持久的部分", o: ["感觉记忆", "短时记忆", "长时记忆"], a: "C", e: "长时记忆（Long-term Memory）是指那些能够保持几天、几年乃至数十年的稳定且持久的经验记忆，其信息容量在理论上近乎无限，是人类个体经验与知识的核心存储库。" },
+      { id: 64, c: "大脑与认知神经科学", s: "大脑中有一个区域在记忆形成中起到了非常关键的作用，该区域位于 ____ 。", o: ["海马体", "杏仁核", "前额叶", "小脑"], a: "A", e: "海马体（Hippocampus）深埋于大脑内侧颞叶，是调控人类短时记忆向长时记忆进行过渡性巩固、转换，以及空间环境认知地图构建与导航中不可替代的核心脑区。" },
+      { id: 65, c: "大脑与认知神经科学", s: "情绪是人脑的一种基本认知功能。从心理学的角度来看 , 情绪是一种复杂的体 验 , 包含主观体验，生理反应，行为表现三个部分。其中， ____ 是指个体在情绪 体验期间通过面部表情、肢体姿势和具体动作等方式所展现的外部行为。通过观 察个体的 ____ ，我们可以推断其情绪状态 , 从而更好地理解和评估情绪的全面影 响。", o: ["主观体验", "生理反应", "行为表现"], a: "C", e: "情绪的‘行为表现’是指个体在处于某种情感状态时，通过面部肌肉群（面部表情）、全身骨骼肌姿态（肢体语言）以及特定逃跑或防御动作所流露的外部可观测信号，是心理学非侵入式推断内部情绪的客观依据。" },
+      { id: 66, c: "大脑与认知神经科学", s: "认知神经科学研究发现，大脑中有多个脑区负责情绪和情感认知。大脑边缘 系统中的 ____ 是其中最重要的脑区，主要负责感知和产生情绪，尤其是恐惧情绪。", o: ["海马体", "杏仁核", "扣带回"], a: "B", e: "位于边缘系统深处的‘杏仁核’（Amygdala）在加工生存级情绪（尤其是对环境威胁警报的截获、触发危机防御和产生‘恐惧’、焦虑情绪）中扮演着绝对主导的快速反应神经中枢角色。" },
+      { id: 67, c: "脑机接口与类脑计算", s: "通过获取并分析大脑的神经活动信号，从而获取特定心理状态、感官或行为 信息的过程被称为 ____ 。", o: ["脑编码", "脑解码", "脑重塑", "脑可视化"], a: "B", e: "脑解码（Brain Decoding）是认知神经科学的前沿分支，指利用高级数学模型或机器学习算法逆向分析和逆向提取采集到的脑神经电或磁信号（如fMRI、EEG），从而无创还原或重建出受试者的实时感官心理状态或行为运动意图。" },
+      { id: 68, c: "脑机接口与类脑计算", s: "通过借鉴或模仿大脑的结构和功能，从而开发出具有大脑智能或认知能力的 计算系统或技术被称为 ____ 。", o: ["脑编码", "脑解码", "类脑计算", "脑重塑"], a: "C", e: "类脑计算（Brain-inspired Computing）旨在彻底打破传统冯·诺依曼计算机架构的局限，深度借鉴生物大脑在超低功耗下运行的大规模神经元异步互联、脉冲突触可塑性与分布式存算一体化机理，设计新型智能软硬件系统。" },
+      { id: 69, c: "脑机接口与类脑计算", s: "在大脑和外部设备间建立通信和控制的技术被称为 ____ 技术。", o: ["脑编码", "脑解码", "脑机接口", "脑重塑"], a: "C", e: "脑机接口（Brain-Computer Interface, BCI）是指在人类或动物脑与外部电子/计算机/机械设备之间建立起来的、不依赖于常规的外周神经系统与肌肉外周组织传递的直接双向通信与控制链路技术。" },
+      { id: 70, c: "深度学习与大模型", s: "受 ____ 的启发，神经科学家麦卡洛克 (Warren McCulloch) 和数学家皮茨 (Walter Pitts) 在  1943  年合作提出了以他们名字首字母命名的 “M-P” 模型，这是现代人工 神经网络的基础", o: ["神经元细胞结构特性及信息传递方式", "大脑视觉系统层次性加工方式", "大脑视觉系统双通路理论", "神经突触连接理论"], a: "A", e: "1943年提出的M-P模型高度抽象化和数理建模了生物神经元的物理形态及‘全或无’的阶跃电位传输特性，利用简单的加权输入和阈值逻辑实现了布尔运算，成为人工神经网络发展的理论开端。" },
+      { id: 71, c: "深度学习与大模型", s: "1957  年，美国心理学家弗兰克 · 罗森布拉特  (Frank Rosenblatt)  提出了 ____ ， 在一定程度上模拟了人类的思维过程，是第一个具有学习能力的算法模型。", o: ["感知机", "Neocognitron", "CNN", "Hebb  学习规则"], a: "A", e: "罗森布拉特提出的‘感知机’（Perceptron）网络模型，创新性地引入了基于误差驱动和梯度微调的连接权重自适应更新校正机制，是历史上第一个在数字计算机上成功复现、真正具备自主学习能力的经典算法模型。" },
+      { id: 72, c: "深度学习与大模型", s: "1980  年，日本科学家福岛邦彦首次将视觉感受野以及视觉皮层分层加工方式 的概念引入人工神经网络，设计出了神经网络模型 ____ ，它被认为是卷积神经网 络的雏形。", o: ["CNN", "Neocognitron", "感知机", "Hebb  学习规则"], a: "B", e: "福岛邦彦受生物视觉感受野启发，设计了由负责局部特征抽取的S细胞和负责平移不变性收敛的C细胞交替叠加组成的‘神经认知机’（Neocognitron），这被学术界公认为现代卷积神经网络（CNN）的直接解剖学雏形。" },
+      { id: 73, c: "深度学习与大模型", s: "1989  年，杨立昆（ Yann LeCun ）将杰弗里 ・ 辛顿 (Geoffrey Hinton) 提出的 ____ 算法引入到卷积神经网络的优化中，开发出了  LeNet ，被认为是最早用于实际应 用的卷积神经网络模型。", o: ["Hebb  学习", "反向传播算法", "梯度下降", "最小二乘优化"], a: "B", e: "Yann LeCun在著名的LeNet手写数字识别系统研发中，首次将多层隐含层优化的‘反向传播算法’（Backpropagation）完美引入并融合到卷积层的权重训练中，彻底终结了人工手工设计图像特征的旧范式。" },
+      { id: 74, c: "深度学习与大模型", s: "2012  年，以 ____ 为核心算法开发的  AlexNet  在大规模视觉识别挑战赛 (ILSVRC) 中以领先第二名  10.8  个百分点的优势一举夺得比赛冠军，开启了以深 度神经网络为代表的人工智能技术在计算机视觉领域应用的浪潮。", o: ["Hebb  学习", "神经网络", "CNN", "Transformer"], a: "C", e: "Hinton团队搭建的经典深层卷积神经网络（CNN）AlexNet，在2012年ImageNet挑战赛中以颠覆性的精确度断层夺冠，有力证明了深层网络配合GPU算力和大数据的恐怖威力，彻底开启了深度学习的黄金时代。" },
+      { id: 75, c: "深度学习与大模型", s: "1982  年，美国物理学家约翰 - 霍普菲尔德（ John Hopfield ）设计出了具有存储 和记忆功能的 Hopfield 神经网络。 2024 年，约翰 - 霍普菲尔德和杰夫 . 辛顿（ Geoffrey Hinton ）共同获得诺贝尔 ____ 奖，以表彰他们 “ 基于人工神经网络实现机器学习 的基础性发现和发明 ” 。", o: ["化学", "物理学", "生理或医学", "经济学"], a: "B", e: "2024年诺贝尔奖将物理学奖联合授予霍普菲尔德与辛顿，深刻肯定了他们创造性地将统计物理学（如玻尔兹曼能量分布、自旋玻璃网络自寻优）交叉融合入人工神经网络理论、奠定现代AI机器学习底座的伟大功勋。" },
+      { id: 76, c: "深度学习与大模型", s: "1997  年， Sepp Hochreiter （霍克赖特）和施密德胡贝尔（ Schmidhuber ）提出 了 ____ ，通过引入复杂的门控机制，能够有效控制信息流动，记住长期的依赖信 息，忘记无关的细节信息，从而有效缓解模型训练中梯度消失和爆炸的问题。", o: ["长短期记忆网络（ Long Short-Term Memory ， LSTM ）", "循环神经网络（ Recurrent Neural Network, RNN ）", "卷积神经网络（ Convolutional Neural Networks,  CNN ）", "Hopfield  神经网络"], a: "A", e: "针对传统RNN在迭代长序列时无法解决的非线性梯度消失与爆炸宿疾，学者创新性提出了长短期记忆网络（LSTM），通过精妙引入由输入门、遗忘门和输出门组成的‘门控乘法算子’，开辟了长效恒定的隐藏细胞状态状态通路。" },
+      { id: 77, c: "深度学习与大模型", s: "2017  年， Google  研究团队提出了以 ____ 为核心算法的  Transformer 。 Transformer  对数据的处理方式类似于大脑在处理信息时的聚焦行为，能够使模 型更加关注输入序列中的关键部分，更好地处理长序列数据中的复杂语义关系， 从而提高模型的处理效率和准确性。", o: ["自注意力机制", "卷积", "反向传播", "控制门"], a: "A", e: "Transformer模型抛弃了长年主导时序建模的循环和卷积链条，全量依赖‘自注意力机制’（Self-Attention）一步到位捕获文本序列内的全局任意长程依赖相关性，赋予了模型高度并行计算与动态聚焦长文上下文的非凡效能。" },
+      { id: 78, c: "强化学习与智能体", s: "谷歌  DeepMind  团队开发的  AlphaGo  系列，利用了深度神经网络强大的特 征提取能力和 ____ 的决策能力，使得智能体能够在复杂的环境中学习到更加高效 的行为策略，在围棋领域取得了重大突破，击败了人类顶尖棋手。", o: ["Transformer", "强化学习", "迁移学习", "联邦学习"], a: "B", e: "AlphaGo不仅依靠深层CNN从海量历史棋盘栅格中自动提取高阶胜率表征，更本质性地融汇了‘强化学习’（Reinforcement Learning）的策略寻优技术，通过大规模自我博弈博弈博弈试错和长期折扣回报奖励机制实现了算力凌驾。" },
+      { id: 79, c: "AI历史与概念", s: "上世纪六七十年代，为应对第一次人工智能研究低潮，英国著名科学家克里 斯托弗 - 朗盖特 - 希金斯 (Christopher Longute-Higgins) 提出人工智能的发展可以从 研究数学、语言、心理、生理等与人类思维和感知直接相关的科学领域入手，由 此而产生了一门新的学科 ____ 。", o: ["认知神经科学", "认知科学", "行为学", "认知心理学"], a: "B", e: "朗盖特-希金斯针对一代理性AI遭遇的数理硬伤，极力倡导打破单一学科门槛，整合了计算机、语言学、哲学以及实验心理学等多维视角，直接促成了新型跨学科群落‘认知科学’（Cognitive Science）的系统确立。" },
+      { id: 80, c: "AI历史与概念", s: "认为智能是通过感知与行为的交互体现的，更强调智能体对外界环境的自适 应能力的学派是 ____ 学派。", o: ["符号主义", "行为主义", "连接主义"], a: "B", e: "行为主义学派（以Rodney Brooks等为代表）坚决拒绝符号主义对复杂宏观世界进行昂贵的显式逻辑规则建模，坚定主张高级智能无需复杂的心智推演，而是通过基础智能体与真实物理环境在‘感知-响应-动作’的交互中自适应涌现出的表现。" },
+      { id: 81, c: "机器学习基础", s: "机器学习最早由哪位科学家提出其经典定义？", o: ["汤姆 · 米切尔（ Tom Mitchell ）", "亚瑟 · 塞缪尔（ Arthur Samuel ）", "艾伦 · 图灵（ Alan Turing ）", "杰弗里 · 辛顿（ Geoffrey Hinton ）"], a: "B", e: "1959年，人工智能先驱亚瑟·塞缪尔（Arthur Samuel）在设计西洋跳棋自我改进程序时，首次创造性地给出了机器学习的经典定义：在不进行显式硬编码编程的情况下，赋予计算机自主学习与纠错能力的研究领域。" },
+      { id: 82, c: "机器学习基础", s: "根据汤姆 · 米切尔（ Tom Mitchell ）的形式化定义，机器学习的核心标准是？", o: ["模型必须使用神经网络", "程序通过经验提升任务性能", "必须处理高维复杂数据", "需要人工标注所有训练样本"], a: "B", e: "米切尔在其经典著作中为机器学习给出了无懈可击的形式化定义三元组：对于一类既定的特定任务T与可量化的性能度量P，如果一个计算机软件系统在任务T上的表现（由P度量）随着经验E的积累积累积累而获得了客观的持续提升，则称其具备机器学习机能。" },
+      { id: 83, c: "机器学习基础", s: "以下哪种场景属于无监督学习的典型应用？", o: ["根据历史销售数据预测房价", "对客户购买行为进行聚类分群", "识别医学影像中的肿瘤区域", "训练机器人通过试错学习行走"], a: "B", e: "无监督学习专门处理内部完全不含外在外挂人工标签（Label）的数据流。“对客户购买行为进行聚类分群”完全基于数据底层的几何相似度与内在分布概率进行自发簇群划分，属于经典的无监督聚类。A与C为监督学习，D为强化学习。" },
+      { id: 84, c: "机器学习基础", s: "关于机器学习与人工智能的关系，以下说法错误的是？", o: ["机器学习是实现人工智能的核心技术之一", "深度学习是机器学习的子领域", "强化学习与监督学习完全独立，无任何关联", "机器学习模型可适应动态环境的变化"], a: "C", e: "强化学习和监督学习之间绝非完全独立、互不相干。在现代前沿的深度强化学习（DRL）架构中，掌控策略和动作估值的深层神经网络，其网络内部参数权重的更新升级恰恰是依赖经典的监督学习梯度反向传播算法来辅助完成特征泛化的。" },
+      { id: 85, c: "机器学习基础", s: "以下哪一项是机器学习的核心要素之一？", o: ["用户界面设计", "数据清洗工具", "目标函数", "编程语言选择"], a: "C", e: "在机器学习的标准方法论体系中，构建任何一个健全系统都必须包含三大铁律要素，即：“模型”（用何种数学算子和空间来表征规律）、“目标函数/损失函数”（如何定量且可导地评估预测残差）以及“优化算法”（如何迭代寻找最优解）。" },
+      { id: 86, c: "机器学习基础", s: "均方误差（ MSE ）主要用于评估以下哪个要素的表现？", o: ["数据质量", "模型复杂度", "目标函数误差", "优化算法效率"], a: "C", e: "均方误差（MSE）计算的是模型对连续数值变量预测值与实际Ground Truth真实标签之间差值的二次方期望，是监督学习中“回归分析任务”中最标准、最不可或缺的目标损失函数评估指标。" },
+      { id: 87, c: "机器学习基础", s: "当模型包含成千上万个参数时，为什么通常不直接求导找最优解？", o: ["目标函数不存在极小值", "均方误差不适用于高维数据", "计算复杂度过高或缺乏解析解", "数据量不足以支持参数优化"], a: "C", e: "当面对复杂的多维非凸、非线性表面时，损失函数极小值的代数闭式解（解析解）通常在数学上根本不存在；即使通过正规方程求解，高维高阶大矩阵的求逆运算其算法计算复杂度呈三次方阶增长，对计算机硬件开销过高，因而必须借助数值梯度下降分步逼近。" },
+      { id: 88, c: "机器学习基础", s: "关于梯度下降算法的描述，哪一项错误？", o: ["沿梯度反方向调整参数以减小损失", "适用于深度学习模型的参数优化", "需计算目标函数对参数的偏导数", "仅能用于线性模型的参数求解"], a: "D", e: "梯度下降（Gradient Descent）作为一种极其通用的数值最优化元算法，不仅广泛应用在初级的线性回归上，更是现代训练所有层级繁复、数亿级非线性参数的人工全连接/卷积/Transformer深度神经网络的底层数学底座。" },
+      { id: 89, c: "机器学习基础", s: "机器学习工作流程的第一步是？", o: ["模型训练", "数据准备", "模型部署", "超参数调优"], a: "B", e: "机器学习是一门彻底以数据作为最底层消费燃料的工程与科学，任何实际生产环境和学术管线的全生命周期生命周期，第一步必然且绝对是数据的全面采集、格式统一、缺失值清洗、去噪及特征工程等数据准备阶段。" },
+      { id: 90, c: "机器学习基础", s: "验证集的主要作用是什么？", o: ["最终评估模型性能", "调整模型超参数", "增加训练数据量", "替换测试集"], a: "B", e: "在机器学习的标准数据集划分体系中，训练集负责更新和训练模型的权重参数，验证集（Validation Set）则保持独立，专门用于在迭代中评估模型，从而指导工程师调优并决定最佳的“超参数”（如网络深度、正则化权重等），而测试集只用于终期盲测。" },
+      { id: 91, c: "机器学习基础", s: "过拟合的典型表现是？", o: ["训练集和测试集误差均高", "训练集误差低，测试集误差高", "训练集误差高，测试集误差低", "训练集和测试集误差均低"], a: "B", e: "过拟合（Overfitting）指模型当前的表达能力相对于数据规模过于冗余，以至于把训练样本集内特有的局部扰动、特定偏见乃至偶发随机噪声都进行了深度硬背式死记，从而表现为训练集误差极低，但在全新未见的独立测试集上泛化误差飙升。" },
+      { id: 92, c: "机器学习基础", s: "以下哪种情况会因数据分布不一致导致模型失效？", o: ["训练集与测试集均包含猫的正面和侧面图像", "训练集仅含白天照片，测试集仅含夜间照片", "训练集和测试集均经过相同归一化处理", "所有数据集均来自同一医疗影像设备"], a: "B", e: "若训练集和测试集面临严重的数据集偏移与协变量移位（如训练全是光照饱和的白天图片，测试全是高噪低光的夜间图片），由于两者的底层特征激活空间和光影概率分布发生了物理断层，模型在白天学到的颜色边界权重在黑夜中会彻底灾难性失效。" },
+      { id: 93, c: "机器学习基础", s: "当一个机器学习模型在训练集和测试集上的误差都非常高时，说明模型可能处于 “ 欠拟合 ” 状态。以下哪种策略通常不能有效缓解该问题？", o: ["增加模型的复杂度（如增加神经网络的层数或节点数）", "减小正则化系数（如降低  L2  正则化的权重）", "采用提前停止（ Early Stopping ）机制终止训练", "进行特征工程，挖掘并添加更多与任务相关的特征"], a: "C", e: "欠拟合指模型表达能力孱弱，连训练集内部的核心关键规律都远远未能学到。提前停止（Early Stopping）机制是一种在模型开始拟合局部细节噪声时截断迭代、用来防范“过拟合”的专用阀门，在欠拟合状态下使用只会让其误差永远僵死在高位。" },
+      { id: 94, c: "机器学习基础", s: "模型部署后需定期重新训练的主要原因是什么？", o: ["确保模型在训练集上达到  100% 准确率", "适应数据分布随时间推移发生的变化", "验证集已完全替代测试集的功能", "减少模型推理时的计算资源消耗"], a: "B", e: "真实生产生活中的外部物理物理物理物理数据环境会伴随时间的不断迁徙、用户群体行为的演变以及市场环境的更迭，呈现出不可控的‘概念漂移’与数据分布平移滑移，因而部署出的系统必须定期引入最新生产数据重训，维持对最新分布的精准契合。" },
+      { id: 95, c: "机器学习基础", s: "以下哪种任务属于监督学习的典型应用？", o: ["根据用户购买行为进行客户聚类分群", "根据已有标注数据训练气温预测模型", "对新闻评论进行情感极性聚类", "对于已有数据进行降维处理"], a: "B", e: "监督学习的核心特质是训练阶段所使用的数据集必须显示绑定有标准的人工标签（Ground Truth）。利用带有历史实际连续温度标签的数据来重训函数去逼近未来的温度数值，属于经典的监督学习“回归分析”分支。" },
+      { id: 96, c: "机器学习基础", s: "弱监督学习最可能用于以下哪种场景？", o: ["拥有  10  万张精确标注的医学影像", "只有图片是否包含动物的二值标签", "所有数据均通过传感器自动生成标签", "需要实时与虚拟环境交互的机器人"], a: "B", e: "弱监督学习（Weakly Supervised Learning）旨在克服强标注标签昂贵稀缺的现实困境，利用粗粒度、有噪声或廉价标签启迪模型训练。如果手头只有高层粗糙的‘图像是否含动物’这一图片级二值弱标签，却期望训练模型定位内部像素级的动物边界，属于标准的弱标签监督建模。" },
+      { id: 97, c: "机器学习基础", s: "监督学习与非监督学习的根本区别在于？", o: ["是否使用神经网络结构", "是否需要定义目标函数", "是否依赖标注数据训练", "是否处理高维数据特征"], a: "C", e: "两类核心方法论在整个机器学习问题定义和数学架构设计上的根本分水岭与试金石，就在于模型在训练阶段能否获取并依赖外挂的标准人工真实标注数据标签（Label）来作为直接的显式误差监督信号反馈。" },
+      { id: 98, c: "AI历史与概念", s: "“ 回归 ” 一词的提出与以下哪位科学家直接相关？", o: ["亚瑟 · 塞缪尔（ Arthur Samuel ）", "弗朗西斯 · 高尔顿（ Francis Galton ）", "汤姆 · 米切尔（ Tom Mitchell ）", "杰弗里 · 辛顿（ Geoffrey Hinton ）"], a: "B", e: "英国著名统计学家兼优生学家弗朗西斯·高尔顿（Francis Galton）在19世纪漫长研究父代与子代身高遗传特征时，惊奇发现极高或极矮父母的后代，其身高均有向整个人类群体总体平均期望‘倒退、回归’的统计规律，从而历史性地命名了‘回归’（Regression）一词。" },
+      { id: 99, c: "机器学习基础", s: "批量梯度下降（ BGD ）与随机梯度下降（ SGD ）的核心区别是？", o: ["BGD  使用全部样本更新参数， SGD  使用单个样本", "BGD  需要计算偏导数， SGD  直接随机调整参数", "BGD  仅用于线性回归， SGD  适用于所有模型", "BGD  必须设置学习率， SGD  无需学习率"], a: "A", e: "批量梯度下降（BGD）在执行单次参数权重矩阵微调更新时，必须硬性扫描、计算并累计全量数据集内所有样本的总残差梯度，开销巨大但方向稳定；而随机梯度下降（SGD）单步仅抽取随机一个单一单一样本的偏导梯度进行阶跃近似替代，极大释放了单步运行速度且有助于跳出局部最优陷阱。" },
+      { id: 100, c: "机器学习基础", s: "逻辑回归主要用于解决以下哪种任务？", o: ["回归分析", "二分类", "多分类", "聚类"], a: "B", e: "尽管在中文及英文翻译名称中带有‘回归’二字，但逻辑回归（Logistic Regression）在数学实质上是通过在线性回归模型的连续实数实数输出外层嵌套一个非线性的Sigmoid函数激活器，强行将其因变量映射并收敛到(0, 1)区间的概率值上，是经典且最常用于解决‘二分类’的分类分支。" },
+      { id: 101, c: "机器学习基础", s: "在逻辑回归中， Sigmoid  函数的主要作用是什么？", o: ["计算特征权重", "将线性输出转换为概率值", "定义损失函数", "优化学习率"], a: "B", e: "Sigmoid函数能够将任意实数值非线性地映射到 (0, 1) 区间内，在逻辑回归中专门用于将线性模型的连续实数输出转化为表示二分类事件发生概率的置信值。" },
+      { id: 102, c: "机器学习基础", s: "K  均值算法的正确步骤顺序是？", o: ["分配样本  →  初始化中心  →  更新中心  →  迭代", "初始化中心  →  更新中心  →  分配样本  →  迭代", "初始化中心  →  分配样本  →  更新中心  →  迭代", "分配样本  →  更新中心  →  初始化中心  →  迭代"], a: "C", e: "K-means（K均值）聚类算法作为经典的无监督算法，标准工作管线为：首先在空间中随机选择K个初始聚类中心点，然后依几何距离将全量样本分配到最近的中心，再根据分配完的簇落计算平均值来更新中心，最后不断循环迭代直至中心不再发生滑移收敛。" },
+      { id: 103, c: "机器学习基础", s: "K  均值算法的目标是最小化以下哪项？", o: ["簇间距离之和", "簇内距离平方和", "全局方差", "分类准确率"], a: "B", e: "K均值算法的核心优化数学目标是最小化每个样本点到其所属簇落聚类中心的几何欧氏距离平方和，通常被称为误差平方和（SSE），用以确保高内聚的聚类品质。" },
+      { id: 104, c: "机器学习基础", s: "经验误差反映的是模型在哪个数据集上的表现？", o: ["训练集", "测试集", "验证集", "新采集的实时数据"], a: "A", e: "经验误差（Empirical Error）在机器学习中又被称为训练误差，专门用来定量度量和反映模型在当前用于优化其参数的“训练数据集”上表现出的残差错漏水平。" },
+      { id: 105, c: "机器学习基础", s: "过拟合的模型最可能表现出以下哪种特征？", o: ["训练集误差高，测试集误差高", "训练集误差低，测试集误差高", "训练集误差高，测试集误差低", "训练集误差低，测试集误差低"], a: "B", e: "过拟合（Overfitting）指模型的复杂表达能力远远溢出了规律本身，导致其深度硬性死记硬背了训练样本里的局部特例与随机噪声。典型症候表现为在训练集上误差逼近于零，但在全新未见的独立测试集上泛化效果溃败、误差高企。" },
+      { id: 106, c: "机器学习基础", s: "k  折交叉验证的核心优势是什么？", o: ["计算速度最快", "减少数据划分的随机性影响", "完全避免模型过拟合", "适用于超大数据集"], a: "B", e: "k折交叉验证通过将总体数据集等分成k份，轮流用其中的k-1份作为重训、剩余1份进行验证盲测，并将k次结果进行统计平均，从而极大程度平抑和克服了单一留出法单次随机抽样拆分数据集时带来的统计学偶然偏误与局限。" },
+      { id: 107, c: "机器学习基础", s: "关于留出法与交叉验证的对比，以下描述错误的是？", o: ["留出法的数据利用率低于交叉验证", "交叉验证的稳定性通常高于留出法", "留出法更适合需要快速验证的大数据集", "交叉验证通过单次划分即可完成评估"], a: "D", e: "交叉验证（Cross Validation）在数学机理上必须硬性通过k次循环迭代划分与k轮独立模型训练才能输出最终的综合评估期望，而非“单次划分即可完成评估”，单次划分是留出法（Hold-out）的核心特色。" },
+      { id: 108, c: "机器学习基础", s: "在机器学习模型评估中，混淆矩阵中的 “False Negative （ FN ） ” 表示什么？", o: ["模型正确预测为正类的样本数", "模型正确预测为负类的样本数", "模型将负类错误预测为正类的样本数", "模型将正类错误预测为负类的样本数"], a: "D", e: "在混淆矩阵的二分类术语中，False代表预测错误，Negative代表预测出的类别为负。两词复合构成的假阴性（FN）即指定义那些实际标签（Ground Truth）本为正类、但却被预测模型不幸给“错误错判为了负类”的漏报样本数。" },
+      { id: 109, c: "机器学习基础", s: "在医疗癌症筛查任务中，优先保证高召回率的目的是？", o: ["减少健康人被误诊为癌症的概率", "避免漏诊真正的癌症患者", "降低检测设备的成本", "提高诊断报告的书写效率"], a: "B", e: "召回率（Recall，又称敏感度）的核心分母是全部真实正样本。在攸关生命的医疗癌症筛查任务中，漏诊（FN，错把癌症患者诊断为健康人回家）的代价远远大于误诊，因此必须极力追求超高召回率以“实现零漏诊、不放过任何一名真正的癌症病人”。" },
+      { id: 110, c: "机器学习基础", s: "关于  F1  分数的描述，以下哪项错误？", o: ["是精确率和召回率的调和平均数", "取值范围在  0  到  1  之间", "当精确率与召回率相等时， F1  分数等于它们", "对类别分布不平衡的数据集无参考价值"], a: "D", e: "F1分数作为精确率（Precision）与召回率（Recall）的调和平均指标，其诞生最核心、最卓越的工业级用途正是为了在面对“正负类别极度不平衡分布的数据集”（如欺诈检测、罕见病筛查）时，提供一个公正、不偏颇的综合性参考尺度，因此D项错误。" },
+      { id: 111, c: "机器学习基础", s: "奥卡姆剃刀原则在机器学习中的核心建议是？", o: ["选择预测准确率最高的模型", "在满足需求时优先选择更简单的模型", "始终使用深度学习模型以应对复杂任务", "根据硬件成本选择计算资源消耗低的模型"], a: "B", e: "著名的奥卡姆剃刀原则（Occam's Razor）核心哲学大意为“如无必要，勿增实体”。推广至机器学习建模中，其深刻主张若有两个模型在当前的拟合精度和解释能力上不分伯仲，应当毫不犹豫地优先采纳结构拓扑更简单的那一个，从而从根源上降低过拟合发生的隐患。" },
+      { id: 112, c: "机器学习基础", s: "以下哪种方法不能直接用于缓解过拟合？", o: ["增加训练数据量", "为模型添加  L2  正则化项", "使用交叉验证评估模型", "采用更复杂的神经网络结构"], a: "D", e: "若盲目采用层数更多、隐含节点更冗余等更复杂的神经网络结构，会直接大幅度暴增模型的自由参数量和拟合自由度，从而只会火上浇油般地“进一步加剧过拟合”，而无法缓解过拟合。" },
+      { id: 113, c: "机器学习基础", s: "选择机器学习模型时，应考虑的主要因素不包括？", o: ["任务类型（如分类或回归）", "数据噪声水平与标签质量", "模型训练所需的编程语言", "任务对精确率或召回率的侧重"], a: "C", e: "机器学习的模型选型完全取决于上层的数理任务形态、特征数据的完备及噪声分布、底层泛化度指标等。现代算法架构均具有跨平台跨编程语言的抽象逻辑，因此模型选型与“使用哪门编程语言开发”毫无本质关联。" },
+      { id: 114, c: "机器学习基础", s: "关于  L2  正则化的作用，以下描述正确的是？", o: ["通过增大模型参数绝对值来提升拟合能力", "通过限制参数大小来降低模型复杂度", "直接删除不重要的特征以简化模型", "仅适用于线性回归任务"], a: "B", e: "L2正则化（在深度学习中常叫权重衰减 Weight Decay）通过在目标损失函数中添加一项各层参数权重的平方和惩罚项，强制约减和限制了参数矩阵的数值绝对值膨胀，使最终学出来的映射函数更趋于平滑柔和，降低了复杂度并抑制过拟合。" },
+      { id: 115, c: "机器学习基础", s: "对于简单数据集线性可分的二分类任务，以下哪种模型最符合奥卡姆剃刀 原则？", o: ["深度神经网络（ 100  层）", "线性分类器", "复杂非线性分类器", "卷积神经网络（ ResNet  架构）"], a: "B", e: "针对原本在低维空间内就已彻底“线性可分”的纯粹低阶二分类场景，选用最基础、轻量且无黑盒隐患的“线性分类器”便能达到最佳解析效果，这无缝完美契合了奥卡姆剃刀原则倡导的‘在满足需求时优先选择更简单的模型’。" },
+      { id: 116, c: "机器学习基础", s: "机器学习的核心目标是让模型具备什么能力？", o: ["在训练数据上达到  100% 准确率", "对未知数据做出准确预测（泛化能力）", "快速处理高维度数据", "完全复现人类的学习过程"], a: "B", e: "机器学习的宏观战略指向绝非是在已知、死记的已有训练集上刷出满分成绩，其真正的终极学术与实用价值在于通过学习已有规律，能够在未来面对全新的、未曾参与过训练的“未知未知数据样本时，依然能输出稳定、高效的准确预测表现”，即泛化能力。" },
+      { id: 117, c: "机器学习基础", s: "机器学习中强调 “ 训练集、验证集、测试集数据分布一致 ” 主要是为了？", o: ["降低数据存储成本", "确保模型学到可泛化的规律", "简化模型训练流程", "提高算法计算速度"], a: "B", e: "机器学习算法成立的前提条件大多建立在独立同分布（i.i.d.）假设之上。唯有保持训练集、验证集与后续测试集在相同的物理分布概率空间中，模型在前端学到的特征边界才能在终端“平移泛化并准确生效”，防止发生严重的概念变迁或失效。" },
+      { id: 118, c: "机器学习基础", s: "以下哪项是机器学习与传统编程的主要区别？", o: ["机器学习必须使用  Python  语言", "机器学习通过数据自动生成规则，而非人工编写规则", "机器学习不需要任何数学知识", "传统编程无法处理结构化数据"], a: "B", e: "传统计算机编程的范式是‘程序员手动编写好死板的业务规则与逻辑演绎算法 + 导入数据 = 计算机输出结论答案’；而机器学习则颠覆为‘将海量历史原始数据 + 对应期望结题答案同时输入系统 = 算法自动归纳总结出其底层的概率分布规则’。" },
+      { id: 119, c: "机器学习基础", s: "以下哪种描述最能概括 “ 监督学习 ” 的特点？", o: ["通过试错与环境交互学习", "从无标签数据中发现隐藏模式", "根据已知答案调整预测规则", "仅用于处理图像和语音数据"], a: "C", e: "监督学习（Supervised Learning）的核心特色是每一条训练样本在进场时均被深度“强制绑定了标准人工客观真实标签（即已知答案）”。模型通过不断输出预测、比对已知真实标签的差值，产生误差损失进而反向精细微调和纠正整体预测规则。" },
+      { id: 120, c: "机器学习基础", s: "为什么说 “ 数据是机器学习的基础 ” ？", o: ["数据量越大模型准确率必然越高", "模型通过分析数据规律而非预设规则学习", "所有数据必须由人工手动标注", "数据决定了计算机硬件的选择"], a: "B", e: "机器学习彻底抛弃了由专家硬编码硬堆砌规则的旧神话，其整个系统的鲁棒性、有效性和推理边界完全是靠自适应分析、吞噬海量样本数据所隐藏的内在关联统计特征来进化出来的，数据是其不可取代的燃料与数理根基。" },
+      { id: 121, c: "机器学习基础", s: "模型 “ 泛化能力 ” 差通常意味着？", o: ["训练速度过慢", "在新数据上预测效果不佳", "无法处理高维度特征", "需要更多计算内存"], a: "B", e: "泛化能力的高低是一个机器学习模型能否真正走向生产线的决定性试金石。所谓泛化能力极其孱弱低劣，即指定向代指模型在面对全新流入、未曾参与过优化的“新未知数据时，预测效果出现断崖式下跌或崩塌不佳”。" },
+      { id: 122, c: "机器学习基础", s: "在医疗诊断任务中使用机器学习模型时，以下哪项是最需要关注的伦理 问题？", o: ["模型是否采用最新深度学习算法", "预测结果的可解释性与错误风险", "训练数据是否包含足够多的类别标签", "模型能否在  GPU  上加速运算"], a: "B", e: "在高危的现代数字化临床医疗诊断等严肃场景中，AI模型做出的任何偏误决策都直接连带并威胁到人类病患的生命安全。如果该模型属于极度黑箱不可解释状态且缺乏错误兜底纠偏风险控制，其引发的医学误诊和责任推诿将造成灾难性的伦理海啸。" },
+      { id: 123, c: "机器学习基础", s: "若线性回归的均方误差函数对参数  w  的偏导数为正，应如何调整  w ？", o: ["增大  w  以减小误差", "减小  w  以减小误差", "保持  w  不变", "随机改变  w  方向"], a: "B", e: "根据经典的数值最优化梯度下降算法公式 $w \leftarrow w - \eta \cdot \frac{\partial L}{\partial w}$，其中学习率 $\eta$ 恒为正。既然当前损失函数对参数 $w$ 的偏导数（斜率）方向为正数，若要促使总误差下行，更新步骤必然需要减去一个正值，即选择‘减小 $w$ 参数以减小误差’。" },
+      { id: 124, c: "深度学习与大模型", s: "深度学习的核心思想是模拟以下哪种结构？", o: ["量子计算机", "大脑神经网络", "传统数据库", "遗传算法"], a: "B", e: "深度学习作为连接主义学派的集大成者，其底层最具革命性的核心思想便是高度抽象和数理仿生模拟了人类‘生物大脑皮层内数以亿计的神经元细胞多层级交互级联拓扑网络’的信息分层加工传递机制。" },
+      { id: 125, c: "深度学习与大模型", s: "人工神经网络的训练本质是调整什么？", o: ["输入数据", "激活函数类型", "神经元连接权重", "网络层数"], a: "C", e: "当一个神经网络的宏观拓扑层数和激活函数被研发人员硬性固定写死后，整个黑盒系统去拟合复杂数学映射的唯一学习变量，便是散落在各隐含层连接弧上的、成千上万个可调可寻优的“人工神经元连接权重（Weights）与偏置”。" },
+      { id: 126, c: "大脑与认知神经科学", s: "下列哪项是人工神经网络与生物神经网络的共同点？", o: ["依赖电子信号传递", "神经元连接强度可调", "完全模拟大脑结构", "无需学习过程"], a: "B", e: "生物脑正是依靠突触的可塑性（长时程增强LTP或长时程抑制LTD）来改变两个神经元之间的冲动传递连接强度以固化记忆；人工神经网络则深度高仿了这一核心机制，通过最优化误差反向回传，动态微调并更改连接参数矩阵中的“连接权重强度”。" },
+      { id: 127, c: "深度学习与大模型", s: "单层感知机无法解决以下哪种问题？", o: ["与门（ AND ）", "或门（ OR ）", "异或门（ XOR ）", "非门（ NOT ）"], a: "C", e: "单层感知机在几何几何数理实质上是一个最基础的纯线性超平面分类器。由于异或（XOR）问题的四种真值组合在二维坐标平面上表现为对角交互分布，根本无法在纸面上拉出一条笔直的直线将其正负完全隔开，因此成为了单层网络的死穴。" },
+      { id: 128, c: "深度学习与大模型", s: "单层感知机可以实现的分类任务是？", o: ["线性可分问题", "非线性可分问题", "图像生成", "语音识别"], a: "A", e: "因为单层感知机内部缺乏隐藏层的非线性空间扭曲扭曲重塑，其做出的最终决策边界呈现为严苛的线性方程状态，所以它在理论上‘仅能且只能完美实现和解决低维线性可分问题（Linearly Separable Problems）’。" },
+      { id: 129, c: "深度学习与大模型", s: "下列哪项是多层感知机解决异或（ XOR ）问题的关键？", o: ["增加输入维度", "引入隐藏层", "使用阶跃函数", "减少训练数据"], a: "B", e: "通过在原本脱节的输入层与输出层之间，创新植入、引入了搭载非线性激活函数的“隐藏层（Hidden Layer）”，多层感知机（MLP）便获得了弯曲折叠空间的魔法，将低维线性不可分的异或特征映射映射并重构为了高维线性可分状态。" },
+      { id: 130, c: "深度学习与大模型", s: "以下哪项是  BP  算法的局限性？", o: ["只能处理线性问题", "梯度消失问题", "不需要训练数据", "只能用于单层网络"], a: "B", e: "经典的误差反向传播（BP）算法在网络网络网络层数深度显著变深时，由于长链链式求导微积分中多次连乘了Sigmoid等激活函数的微小偏导数值，会导致回传到靠近输入端前层的残差梯度呈现指数级断崖下行，即深层网络训练中致命的‘梯度消失’缺陷。" },
+      { id: 131, c: "深度学习与大模型", s: "反向传播（ BP ）算法的核心思想基于什么数学原理？", o: ["傅里叶变换", "链式法则", "欧拉定理", "拉格朗日乘数"], a: "B", e: "BP算法的核心是要将输出终端计算出的复合总损失函数误差，精准、可导地拆解分配并反向求出对中间每一层极其隐蔽的权重参数的偏导数。这在高等数学和微积分大厦里，底层完全依托且基于复合函数求导的‘链式法则（Chain Rule）’。" },
+      { id: 132, c: "深度学习与大模型", s: "以下哪项不是传统神经网络的局限性？", o: ["过拟合", "计算复杂度低", "局部极值问题", "梯度消失"], a: "B", e: "传统深层全连接神经网络由于相邻隐藏层神经元之间采取了两两密集的笛卡尔积式物理级联，不仅参数矩阵空间极大，而且随着输入规模和深度的上行，其计算开销呈爆发式飙升，属于‘计算复杂度极高、开销过大’，因而B项不属于其原生的固有局限性。" },
+      { id: 133, c: "深度学习与大模型", s: "以下哪项是  BP  算法更新权重的依据？", o: ["输入数据分布", "误差梯度", "网络层数", "激活函数类型"], a: "B", e: "反向传播（BP）算法是一套最标准的梯度下降最优化技术范式，它在执行每一步隐含层参数迭代和更新拨正时，唯一的、最直接的数理偏导依据就是当前反向推算出来的“损失函数对权重的误差梯度（Error Gradient）”。" },
+      { id: 134, c: "深度学习与大模型", s: "下列哪项属于  BP  算法的计算缺点？", o: ["训练速度极快", "参数数量随网络规模大幅 / 平方级增长", "仅需单次迭代", "无过拟合风险"], a: "B", e: "在全连接BP网络中，因为缺乏空间或时间层面的结构化约简，每一隐含层的每一个节点都必须与前后层全量互联，这会导致系统的“待调参数总规模随着网络节点规模和深度的扩张而呈现出极其夸张的平方级/大幅飙升”，极易撑爆内存并引发训练难关。" },
+      { id: 135, c: "深度学习与大模型", s: "当  MP  模型采用阈值（阶跃）函数作为激活函数时，神经元可以看作是什么？", o: ["非线性分类器", "线性回归模型", "线性分类器", "聚类模型"], a: "C", e: "1943年问世的M-P神经元模型如果强行在外层嵌套和采用了符号阶跃函数（Heaviside Step Function）作为硬性激活器，其整体的输入求和项 $\sum w_i x_i - \theta$ 在空间上划出的边界必然是一条硬性直线或一扇平面超平面，等价于一个最纯粹的‘线性分类器’。" },
+      { id: 136, c: "深度学习与大模型", s: "通用 / 万能近似定理表明神经网络可以用来逼近什么函数？（ ）", o: ["任意函数", "任意连续函数", "线性函数", "非线性函数"], a: "B", e: "由Cybenko等学者严密证明的通用/万能近似定理（Universal Approximation Theorem）明确阐明：只要额外搭载了一个包含有限数量神经元的单一隐藏层，并且配备了任意非挤压非线性的挤压激活函数，前馈全连接神经网络便能以任意给定的超高精度在闭集上无缝去迫近‘任意多维连续函数’。" },
+      { id: 137, c: "深度学习与大模型", s: "BP  算法的核心思想是在什么学习基础上进行多层扩展？（ ）", o: ["Hebb  学习", "δ  学习", "强化学习", "无监督学习"], a: "B", e: "BP算法在本质上，是将专门针对无隐藏层单层线性网络进行误差纠偏的、基于最小均方误差梯度迭代的‘德尔塔学习规则（$\delta$ 学习规则/Delta Rule）’，利用微积分链式求导长链，历史性地推广和延展到了包含任意多隐层的复杂神经网络大系中。" },
+      { id: 138, c: "深度学习与大模型", s: "BP  算法中，通过什么法则计算误差函数对每一层权重的梯度？（ ）", o: ["乘法法则", "链式法则", "加法法则", "除法法则"], a: "B", e: "由于深度或多层感知机系统在数理表达上是一个超级庞大的、由内层到外层环环嵌套组合而成的多阶复合函数复合架构，要将终点处的单标量损失误差倒推求出对底层各子因子的导数，在数学工具箱中唯有利用微积分的‘链式法则（Chain Rule）’逐层回推。" },
+      { id: 139, c: "深度学习与大模型", s: "BP  算法的算法流程不包括以下哪一步？（ ）", o: ["正向传播预测输出", "计算输出误差", "Hebb  法则更新权重", "梯度下降算法更新权重"], a: "C", e: "BP算法的三个黄金铁律标准流程包括：前向传播计算各隐层输出、在顶层计算模型输出与Ground Truth标签的实际误差差值、反向传播依靠梯度下降批量更新参数。而基于无监督、同时激活即连接增强的‘Hebb规则’与其原理完全相悖，不予包含。" },
+      { id: 140, c: "深度学习与大模型", s: "BP  算法中，常用的误差计算方法是什么？（ ）", o: ["绝对误差", "均方误差", "交叉熵误差", "对数误差"], a: "B", e: "在经典、标准且历史悠久的传统多层反向传播（BP）网络理论框架与算法推导原范式中，最普遍且经典的代价评估手段是直接计算网络预测输出向量与真实标签向量之间的‘均方误差（Mean Squared Error, MSE）’二乘项之和。" },
+      { id: 141, c: "机器学习基础", s: "当神经网络结构复杂且训练数据有限时，容易出现什么问题？（ ）", o: ["梯度消失", "梯度爆炸", "过拟合", "欠拟合"], a: "C", e: "如果模型的内部参数规模与结构复杂度极高（意味着模型的数学表达自由度极度充沛），而与之配套的训练输入数据集又极度贫瘠和有限，模型就会像作弊的考生一样把整个训练题库里的标点符号和偶发噪声完全硬背复制下来，呈现出无法应对新题的严重过拟合。" },
+      { id: 142, c: "深度学习与大模型", s: "随着隐含层增加，反向传播传递给较低层的信息会减少，这会导致什么 问题？（ ）", o: ["梯度消失", "局部极值", "计算复杂度降低", "过拟合"], a: "A", e: "在网络隐含层不断叠加拉长的长链反向传播过程中，由于靠近输出顶层的微小导数在顺着链式求导路径一关关连续做乘法回传时，其数值极快地发生几何级下挫收缩。一旦传递到最靠近输入侧的底层较低层时，梯度流已趋于枯竭和虚无，导致底层参数彻底失去被更新优化的能力，这就是‘梯度消失’。" },
+      { id: 143, c: "深度学习与大模型", s: "证明了多层神经网络可以通过反向传播算法有效训练，解决单层感知机 局限性的是哪种算法？（ ）", o: ["Hebb  算法", "δ  算法", "BP  算法", "梯度下降算法"], a: "C", e: "1986年Rumelhart与Hinton等人重磅发表的‘BP算法（反向传播算法）’，通过精妙地多隐层链式求导，有力且漂亮地证明了多层人工神经网络是完全可被高能、高精度有效优化训练的，一举粉碎了数十年前符号学派对感知器无法解非线性异或问题的魔咒诅咒。" },
+      { id: 144, c: "深度学习与大模型", s: "卷积神经网络（ CNN ）在处理图像数据时，相较于全连接感知器网络的 主要优势是什么？", o: ["参数数量更多", "计算复杂度更高", "局部连接和参数共享减少参数量", "只能处理线性可分问题"], a: "C", e: "若用传统全连接网络去直接拉平吃进一幅高分辨率图像，会导致输入层与第一隐层之间瞬间堆砌出亿万个恐怖的冗余参数，引发内存爆炸与惨烈过拟合。而CNN基于生物视觉感受野，强力引入了‘局部连接’与全图各视野滑动‘参数共享’两大核武器，用极轻量精简的参数量高能捕获了图像的二维空间几何相邻关系特征。" },
+      { id: 145, c: "大脑与认知神经科学", s: "生物视觉系统中的 “ 简单细胞 ” 对什么信息敏感？", o: ["颜色变化", "运动轨迹", "复杂纹理", "某一朝向的边缘信息"], a: "D", e: "根据神经科学家Hubel和Wiesel针对猫初级视觉皮层（V1区）进行的里程碑式电生理学观察发现，皮层内的‘简单细胞（Simple Cells）’具有高度严苛的方向选择性感受野，它对整个视场中“处于特定精确空间方位、呈现某一特定朝向倾角的局部边缘或细线条信息”展现出最强烈的动作电位爆发敏感度。" },
+      { id: 146, c: "深度学习与大模型", s: "现代卷积神经网络的真正开端是以下哪个模型？", o: ["AlexNet", "LeNet-5", "ResNet", "Transformer"], a: "B", e: "Yann LeCun于1998年正式确立、发表并用于全美支票与邮政手写数字光学辨识的‘LeNet-5’网络，完美且首次奠定了由“卷积层（提取特征）+ 下采样池化层（空间不变性不变性变换）+ 后端全连接层”构成的标准现代级CNN底层黄金技术拓扑，是现代卷积神经网络毋庸置疑的始祖开端。" },
+      { id: 147, c: "深度学习与大模型", s: "卷积神经网络中，池化层的主要作用是什么？", o: ["增加特征图的维度", "引入非线性激活函数", "降低特征图的空间维度并保留重要信息", "直接生成分类结果"], a: "C", e: "池化层（Pooling，如最大值池化Max-Pooling）主要在大面积滑窗步进下采样中，扮演特征图几何长宽长宽长宽尺寸的硬性物理裁剪裁剪角色。它能在“强力榨干并降低特征图空间维度的同时、原汁原味地保留住本邻域内能量最强或最核心的局部响应特征”，降低后续处理算力负担，增强尺度的韧性。" },
+      { id: 148, c: "深度学习与大模型", s: "ResNet  的核心创新是引入了什么结构来解决梯度消失问题？", o: ["跳跃连接（ Skip Connections ）", "池化层", "全连接层", "更大的卷积核"], a: "A", e: "何恺明团队提出的深度残差网络（ResNet），其足以载入史册的最核心创新是在层间拓扑设计中强力嵌入了“跳跃连接 / 残差连接（Skip Connections/Shortcut）”。该通道在数学上构建了一条恒等映射直达高速公路，允许顶层的误差梯度流完全无损、跨层隔山打牛般地直坠回传给最初底层，彻底解决了网络堆叠到百层以上时发生退化与梯度蒸发的历史死结。" },
+      { id: 149, c: "深度学习与大模型", s: "以下哪项是  CNN  的局限性？", o: ["无法处理图像数据", "难以有效捕捉时间序列中的长期依赖关系", "参数量过少", "只能用于自然语言处理"], a: "B", e: "CNN的拓扑滑窗和卷积核设计天然服务并聚焦于挖掘和提炼静态二维图像的局部空间网格拓扑相关性。由于其结构中默认缺乏时间轴上的依序循环递归链条以及全局远距离任意点对齐注意力，因而在处理强连续相关、跨度极长的“时间序列长程依赖依赖关系”时显得力不从心。" },
+      { id: 150, c: "深度学习与大模型", s: "循环神经网络（ RNN ）的核心特点是什么？", o: ["独立处理每个输入", "通过循环结构捕捉序列数据的时间依赖性", "仅用于图像分类", "无需激活函数"], a: "B", e: "循环神经网络（RNN）最核心、有别于前馈网络的灵魂特色，正是通过在隐藏层引入了沿时间轴单向串联、步步传递更新共享参数的“时间反馈循环迭代结构（Hidden-to-Hidden Loop）”。这使网络自带隐式记忆沙盒，能够极高能地捕获、记录并榨干时序长流和文本序列数据内蕴含的时间前后依赖规律。" },
+      { id: 151, c: "深度学习与大模型", s: "LSTM  中 “ 遗忘门 ” 的作用是什么？", o: ["决定丢弃多少先前的信息", "生成输出结果", "增加新信息到细胞状态", "计算注意力权重"], a: "A", e: "在长短期记忆网络（LSTM）精心搭建的三门门控系统中，‘遗忘门（Forget Gate）’通过在隐藏细胞状态通道上执行哈达玛积乘法门控算子，计算出一个0到1之间的弱化系数，其精细的职责就是“智能化决定和控制究竟应当选择性抹去、丢弃多少来自于上一过去时刻已经变得无关紧要的长程历史细胞老经验记忆”。" },
+      { id: 152, c: "深度学习与大模型", s: "Transformer  模型的核心机制是什么？", o: ["卷积操作", "池化操作", "全连接层", "自注意力机制"], a: "D", e: "2017年Google发表的Transformer架构，彻底终结了以往循环神经网络RNN和卷积网络CNN在NLP界长达数年的割据割据。其最底层的基石与全盘核心动力机制便是‘自注意力机制（Self-Attention Mechanism）’，借此机制实现了输入长文本序列内部任意两个Token之间无需中继、一步到位的全局深度对齐与并行上下文特征提取。" },
+      { id: 153, c: "深度学习与大模型", s: "Transformer  中 “ 位置编码 ” 的作用是什么？", o: ["引入非线性激活函数", "为序列元素添加位置信息", "减少参数量", "直接生成输出结果"], a: "B", e: "因为Transformer舍弃了具有天然依序消费特性的RNN串行结构，其核心自注意力机制在执行点积运算时是完全扁平化且天然无序、具有排列不变性的。为了在一句话并行送入网络时还能精准识别每个词的绝对先后位置及语法前后跨度，必须通过在输入特征层强行嵌入融合一套“位置编码（Position Encoding）向量时序特征”。" },
+      { id: 154, c: "深度学习与大模型", s: "BERT  模型的核心特点是什么？", o: ["使用单向  Transformer  编码器", "仅用于图像分类", "通过双向  Transformer  编码器学习文本表示", "无需预训练"], a: "C", e: "谷歌于2018年推出的预训练BERT大模型，其技术主线最核心的亮点和特点是完全基于并采用了“深层深层多层‘双向’的Transformer编码器（Bidirectional Transformer Encoder）”进行多任务预训练。这使其能够在进行完形填空等掩码训练时，完美融合一个词左侧和右侧的全局上下文融合语境，产生惊人的深层双向文本特征表征。" },
+      { id: 155, c: "深度学习与大模型", s: "Vision Transformer （ ViT ）如何将图像输入到  Transformer  中？", o: ["直接输入像素值", "将图像分割为固定大小的补丁并视为序列", "仅提取边缘信息", "使用池化层压缩图像"], a: "B", e: "2020年横空出世的ViT模型成功将纯预训练大模型架构无缝复制引入CV计算机视觉界的精妙神来之笔，正是它在输入端直接打破常规：将一张完整的二维图像矩阵，硬性、规则切碎划分为一系列固定规格、互不重叠的二维局部小图像块（Patches，即图像补丁），然后通过线性投影将其强行平铺展平，变相作为一列由‘视觉词Token’组成的纯一维特征序列整齐塞进标准Transformer大系中。" },
+      { id: 156, c: "深度学习与大模型", s: "GPT  系列模型的主要生成方式是什么？", o: ["自回归方式预测下一个词", "双向编码输入序列", "仅用于图像生成", "无需预训练"], a: "A", e: "OpenAI提出的GPT（Generative Pre-trained Transformer）大家族大模型，走的是一条纯正坚定的“自回归（Autoregressive）”生成路线。即在根据已知给定的提示词或历史文本上下文作为输入时，模型通过掩码自注意力仅看左侧历史，在输出端采用逐词逐Token预测并吐出后续最可能紧挨着的“下一个词”的概率分布，周而复始实现长文生成。" },
+      { id: 157, c: "深度学习与大模型", s: "以下哪项是  PyTorch  的主要特点？", o: ["仅支持静态计算图", "动态计算图机制便于快速原型设计", "仅用于自然语言处理", "不支持  GPU  加速"], a: "B", e: "PyTorch之所以能在全球高校学术界、各大顶级大厂研发实验室形成断层式的生态垄断和青睐，最核心、最好用的技术特色便是它原生引入并强力贯彻的“动态计算图（Dynamic Computation Graph，即命令式命令式Eager模式）机制”。它允许开发者像编写常规Python原生代码一样随心所欲、在运行时随用随变地搭建、执行和Debug整体神经网络原型，极大加速了科研成果的迭代转化。" },
+      { id: 158, c: "深度学习与大模型", s: "TensorFlow  的  TensorBoard  主要用于什么？", o: ["可视化训练过程和模型结构", "生成图像数据", "替代卷积操作", "仅用于模型部署"], a: "A", e: "TensorBoard是TensorFlow庞大软件生态体系中官方御用的、不可或缺的“可视化Web综合分析套件仪表盘”。它允许算法工程师在漫长且枯燥的重训或微调阶段，以实时动态Web曲线图、直方图形式高能直观地监控模型内部的Loss损失标量下行、精度上扬、模型物理层拓扑拓扑网络图结构变化以及网络权重的数值分布状况。" },
+      { id: 159, c: "深度学习与大模型", s: "飞桨（ PaddlePaddle ）是哪家公司开发的深度学习框架？", o: ["谷歌", "Facebook", "百度", "华为"], a: "C", e: "飞桨（PaddlePaddle）是由中国顶尖互联网与人工智能巨头企业“百度公司（Baidu）”完全完全独立主导自主研发设计、目前国内工业界和产业级规模应用极其繁荣、全面开源开放的标杆级国产全栈深度学习软件框架底座平台。" },
+      { id: 160, c: "深度学习与大模型", s: "以下哪项是  CNN  中 “ 卷积层 ” 的作用？", o: ["直接输出分类结果", "从输入数据中提取局部特征", "仅用于降维", "生成随机噪声"], a: "B", e: "卷积层（Convolutional Layer）是整个卷积神经网络中最核心、最灵魂的基本功能构成单元。它通过驱动包含特定权重的卷积核矩阵在输入的密集图像或特征矩阵空间上进行按步长的滑动算子乘加运算，从而高效捕获提取出物体局域空间内的线条、边缘、明暗变化及几何局部高能特征。" },
+      { id: 161, c: "深度学习与大模型", s: "在  Transformer  的解码器中， “ 编码器 - 解码器注意力层 ” 的作用是什么？", o: ["防止未来位置信息流入当前位置", "允许解码器关注编码器的输出", "直接生成图像数据", "仅用于池化操作"], a: "B", e: "在标准的Transformer Encoder-Decoder（如机器翻译等）交叉注意力体系结构中，解码器（Decoder）每层内部特意横跨搭载了该层注意力机制。该机制的Query源自解码器上一层，而Key与Value则完全跨界捕获并源自于编码器（Encoder）对源文输出的顶层全局特征表示，其根本的职责就是“强力促使、允许解码器在逐字翻译生成新内容时，能够毫无保留且精准对齐地实时参考并关注编码器端送来的核心上下文事实信息”。" },
+      { id: 162, c: "大脑与认知神经科学", s: "现代人工神经网络的设计主要仿生 ____ 。", o: ["生物神经元与突触结构", "大脑血液流动机制", "大脑记忆分区", "视觉皮层单一细胞"], a: "A", e: "虽然现代ANN具有深厚的统计学与应用数学内核，但其最最初步的模型构想、拓扑结构与计算逻辑（诸如加权输入、偏置、激活函数门限以及权重可塑性更新）在历史源头上均是深度“仿生模拟并抽象重塑了人类脑神经科学中，无数个精细的微观生物神经元细胞形态以及它们相互接触、进行化学/电信号传导的特异性突触可塑性结构”。" },
+      { id: 163, c: "深度学习与大模型", s: "下列不属于  MP  神经元模型构成要素的是 ____ 。", o: ["输入权重", "阈值", "激活函数", "池化核"], a: "D", e: "1943年由麦卡洛克和皮茨共同提出的M-P神经元模型作为人工网络的开山理论模型，核心包含了多元输入加权（输入权重）、内部线性求和、硬性阶跃减免（阈值）和非线性映射（激活函数）四大金刚组件。而‘池化核’则是数十多年后在卷积神经网络（CNN）中为了空间采样才发明出来的概念，非M-P原生元素。" },
+      { id: 164, c: "深度学习与大模型", s: "单层感知机无法解决以下哪种经典问题 ____ 。", o: ["与门", "或门", "异或门", "非门"], a: "C", e: "因为单层感知机（Perceptron）不具备任何多层隐含层的映射转换，其底层的数学本质等价于一个严苛的纯线性分类超平面。而经典的‘异或门（XOR）’真值分布在二维空间上呈现交错的非线性可分状态，无法被单一直线一刀切开，这直接成为了早期单层网络无法打破的致命软肋。" },
+      { id: 165, c: "AI历史与概念", s: "神经网络第一次研究低潮始于哪一事件之后 ____ 。", o: ["达特茅斯会议", "感知机局限性被指出", "BP  算法提出", "AlexNet  问世"], a: "B", e: "1969年，符号主义学派领袖马文·明斯基和派珀特联合出版了具有毁灭性声誉的《感知器》一书，通过严密的代数数理逻辑公开论证和指出了单层感知机在面对非线性（如异或）分类任务时不可调和的死穴与局限性。此举瞬间将全球学术界和资助机构的信心全面扑灭，导致刚起步的网络连接主义研究直接全面陷入了长达十余年惨烈的‘第一次AI低谷寒冬’。" },
+      { id: 166, c: "深度学习与大模型", s: "开启深度学习大规模应用浪潮的模型是 ____ 。", o: ["LeNet-5", "AlexNet", "VGG", "ResNet"], a: "B", e: "2012年，由杰弗里·辛顿（Geoffrey Hinton）及其爱徒组成的团队搭建的深层卷积神经网络‘AlexNet’在大规模视觉分类ImageNet百万图像盲测挑战赛中，以超乎想象的断层式悬殊精确度击败了所有基于手工传统特征的顶级战队一举夺魁。这一标志性事件犹如惊雷般彻底惊醒并引爆了全球学术界与整个工业界，疯狂拉开了第三次人工智能以及深度学习大规模颠覆性落地的黄金大浪潮。" },
+      { id: 167, c: "深度学习与大模型", s: "BP  算法的中文全称是 ____ 。", o: ["正向传播算法", "反向传播算法", "梯度迭代算法", "聚类优化算法"], a: "B", e: "在深度学习算法世界中，BP是英文Backpropagation的经典简称，其中文标准学术级全称被统一定义翻译为“反向传播算法”。其核心机理是在前向推断完成得到单标量损失残差后，驱动误差信号沿着原计算拓扑网络由输出层向后倒退、逆向回传，从而科学求解出中间每层上游各未知权重的偏导梯度。" },
+      { id: 168, c: "深度学习与大模型", s: "BP  算法计算多层网络误差梯度依托的数学原理是 ____ 。", o: ["贝叶斯定理", "链式法则", "拉格朗日乘数法", "大数定律"], a: "B", e: "由于一个多隐藏层的人工深层神经网络模型在数学因果表达上是一座由无数隐节点、非线性激活算子首尾环环紧扣、高阶嵌套复合而成的极其庞大的多元复合函数大厦。要能够解析求出顶层损失对最底层权重的偏导数，在高等微积分中，必须且唯一的底层数理依赖依据便是复合函数求导的‘链式法则（Chain Rule）’。" },
+      { id: 169, c: "深度学习与大模型", s: "深层神经网络使用  BP  训练最易出现的问题是 ____ 。", o: ["欠拟合", "梯度消失", "样本不足", "学习率过小"], a: "B", e: "在采用传统经典的BP（反向传播）长链去高强度优化层数较深的传统深层网络时，链式相乘中如果多次级联了Sigmoid或Tanh等饱和区间导数极大值不足0.25的激活激活函数，会导致计算出的底层特征梯度随着层数的深入而发生灾难性的指数级萎缩或消散，即极易出现‘梯度消失’导致网络无法收敛更新的问题。" },
+      { id: 170, c: "深度学习与大模型", s: "CNN  指的是哪类网络 ____ 。", o: ["循环神经网络", "卷积神经网络", "长短期记忆网络", "变换器网络"], a: "B", e: "在深度学习与计算机视觉的技术领域内，CNN是英文Convolutional Neural Network的标志性缩写，其中文统一标准学术界规范译名称作“卷积神经网络”，是一类专门善于高效攫取和处理二维网格面像素级空间局部特征的高能深度感知系统。" },
+      { id: 171, c: "深度学习与大模型", s: "下列不属于卷积神经网络核心特性的是 ____ 。", o: ["局部连接", "权值共享", "池化降维", "全连接冗余参数"], a: "D", e: "卷积神经网络（CNN）之所以能降维打击打击并淘汰早期全连接多层感知机去处理图像，最核心、最引以为傲的三大理论法宝分别是“局部区域连接、全局权值共享以及下采样池化降维”。它致力于打破和彻底避免传统网络中那种导致计算崩溃、容易发生严重过拟合的‘全连接高冗余参数矩阵’，因此D属于其剔除缺陷而非核心特性。" },
+      { id: 172, c: "深度学习与大模型", s: "卷积神经网络中池化层的核心作用不包括 ____ 。", o: ["降低特征图维度", "减少模型参数量", "提升模型平移不变性", "自动学习卷积核"], a: "D", e: "池化层（Pooling，如常用的Max-Pooling）在CNN中作为一种完全固定好几何映射划分规则（如取邻域极值）的静态下采样数学算子层，其层内本身“根本不含有任何需要通过反向传播算法去在训练中动态调整和自主学习的参数权重、卷积核参数”，因而D项错误。" },
+      { id: 173, c: "深度学习与大模型", s: "下列哪种激活函数能有效缓解深层网络梯度消失问题 ____ 。", o: ["阶跃函数", "Sigmoid", "ReLU", "线性激活函数"], a: "C", e: "传统的Sigmoid或Tanh函数由于其特殊的S型挤压特性，在两极饱和区导数趋向于0，多层连乘极易锁死梯度。而ReLU（修正线性单元）激活函数在正区间内（$x>0$）其一阶导数恒等于坚挺的常量1，这就完美确保了梯度信号在深层长链回传中能够无损传导，从而从根本上有效缓解和根治了深层网络的‘梯度消失’绝症。" },
+      { id: 174, c: "深度学习与大模型", s: "ResNet  解决深层网络退化与梯度问题的核心结构是 ____ 。", o: ["增大卷积核", "跳跃连接（残差连接）", "多层池化叠加", "增大学习率"], a: "B", e: "何恺明等人提出的深度残差网络（ResNet）最伟大的灵魂设计就在于其硬件拓扑上开创性地加塞引入了恒等直连的“跳跃连接（Skip Connection / 残差快捷路径 Shortcut）”。这条路径让前向的物理特征与反向回传的偏导梯度流可以完全跨越层层非线性卷积层的封锁，走绿色通道无损直达深层前线，打通了上百层极深网络的训练壁垒。" },
+      { id: 175, c: "深度学习与大模型", s: "循环神经网络（ RNN ）最适合处理哪类数据 ____ 。", o: ["静态图像", "时序序列数据", "表格结构化数据", "离散分类数据"], a: "B", e: "循环神经网络（RNN）内部独树一帜地设计了沿时间步不断循环、步步交织更新的隐藏历史状态机。它自带一条隐式的动态时间因果记忆沙盒，因而其天然且最擅长解决和吞噬带有强烈上下文强因果相依、前后密不可分的‘时序、文本、音频等一维时间序列数据（Sequential Data）’。" },
+      { id: 176, c: "深度学习与大模型", s: "为解决  RNN  长距离依赖缺陷衍生出的网络是 ____ 。", o: ["CNN", "LSTM", "LeNet", "AlexNet"], a: "B", e: "由于普通基本RNN在沿着时间轴迭代演化极长序列时，由于偏导项长程连乘会导致灾难性的梯度消失或爆炸，从而彻底遗忘早期上下文。为了攻克这一长程跨度死结，学者于1997年精妙设计出了搭载细胞长河状态与三门门控控制中枢的‘长短期记忆网络（LSTM）’，完美收复了‘长距离依赖’这一技术天险。" },
+      { id: 177, c: "深度学习与大模型", s: "Transformer  模型最核心的创新机制是 ____ 。", o: ["卷积运算", "自注意力机制", "循环记忆结构", "池化下采样"], a: "B", e: "2017年Google发表的Transformer之所以能够掀起全球通用大模型与AIGC的第四次产业技术革命，最核心、最具颠覆意义的划时代技术底牌就是彻底解雇抛弃了传统的循环RNN和空间CNN，全量转而依赖无视时空阻隔、一步到位直接并行测算全局任意两Token相关度权重的‘自注意力机制（Self-Attention Mechanism）’。" },
+      { id: 178, c: "深度学习与大模型", s: "Transformer  中位置编码的主要作用是 ____ 。", o: ["降低参数量", "给序列添加位置时序信息", "加速模型收敛", "防止模型过拟合"], a: "B", e: "因为Transformer完全依赖自注意力机制执行全局扁平化的点积相关度相关度映射，网络在打满并行计算时对输入的输入Token词包呈现天然无序的词袋排列不变性。为了不破坏人类自然语言中严谨且攸关语义的词序和前后相对先后次序，必须通过外挂手段强制向输入嵌入叠加一套‘位置编码（Position Encoding）向量时序特征’。" },
+      { id: 179, c: "深度学习与大模型", s: "在常用的主流深度学习工具与平台中，由百度公司开发、作为中国首个 自主研发且功能丰富、开源开放的产业级深度学习平台是 ____ 。", o: ["飞桨（ PaddlePaddle ）", "PyTorch", "昇 思（ MindSpore ）", "TensorFlow"], a: "A", e: "飞桨（PaddlePaddle）作为中国人工智能基础通用底座软件开发中的一杆大旗，是由互联网领军巨头‘百度公司’历时多年、完全完全自主倾力独立研发设计推出的中国首个功能完备、生态繁荣、产业级全面开源开放的深度学习核心主框架与全栈平台。" },
+      { id: 180, c: "深度学习与大模型", s: "在常用的主流深度学习工具与平台中，华为推出的全场景  AI  深度学习 框架是 ____ 。", o: ["MindSpore", "PaddlePaddle", "PyTorch", "TensorFlow"], a: "A", e: "MindSpore（中文学术界学术名‘昇思’）是由我国顶级硬核科技巨头‘华为公司（Huawei）’完全完全自研、面向端-边-云全场景多维协同协同设计推出的标杆级前沿AI深度学习开源计算框架。它与底层的国产大算力全栈昇腾（Ascend）系列AI硬件芯片生态达成了近乎完美的底层硬件软硬原生融合调优。" },
+      { id: 181, c: "深度学习与大模型", s: "1986  年， Rumelhart 、 Hinton 、 Williams  等学者提出了一种能够有效训练 多层感知机、解决单层感知机局限性的核心算法，即 ____ 算法。", o: ["Hebb  学习", "反向传播（ Backpropagation ）", "δ  学习", "Q  学习"], a: "B", e: "1986年以杰弗里·辛顿（Geoffrey Hinton）为核心的学者群发表了开天辟地的学术报告，成功将带有链式求导、数值最优化特色的‘反向传播算法（Backpropagation，简称BP算法）’完美引入并推广普及到了多层人工神经网络模型中，让连接主义彻底起死回生。" },
+      { id: 182, c: "深度学习与大模型", s: "通用 / 万能近似定理（ Universal Approximation Theorem ）表明，神经网络 如果要用来逼近任意连续函数，并且达到任意给定的精度要求，至少需要具备 ____ 。", o: ["一个隐藏层", "两个隐藏层", "深层（ 5  层以上）架构", "三个隐藏层"], a: "A", e: "万能近似定理在纯应用数学定理层面上给出了高度清晰和令人振奋的终极论证：前馈线性全连接网络只要能够包含并搭载至少‘一个非线性激活的隐藏层（Single Hidden Layer）’，在隐节点规模足够的情况下，就能在实数闭集上以任意趋近的极限精度无缝逼近任意复杂的多元连续目标函数。" },
+      { id: 183, c: "深度学习与大模型", s: "1949  年心理学家提出的  Hebb  学习规则是早期重要的训练算法，由于缺 乏明确的 ____ ，容易导致权重无限增长，使网络失去稳定性。", o: ["隐含层传播机制", "误差修正机制", "非线性激活函数", "并行计算支持"], a: "B", e: "心理学家赫布提出的经典Hebb法则核心逻辑极为朴素：‘两个神经元若同时兴奋，则它们之间的突触连接权重应获得增益增强’，这是一种纯粹原始的无监督关联。由于算法架构内部完全“缺乏一套基于最终预测残差与外部人工标准标签之间进行实时反差对齐的‘误差纠偏修正反馈机制’”，导致在连续激活循环中其网络各个权重会陷入无上限的几何级膨胀和数值崩溃，令整体系统迅速瘫痪死锁。" },
+      { id: 184, c: "深度学习与大模型", s: "δ  学习（ delta  规则，广义  Hebb ）相比传统  Hebb  学习做出的核心改进是 ____ 。", o: ["引入了能量函数的概念，使网络能够自动寻优", "将激活函数替换为了  ReLU ，避免了死神经元", "通过链式法则完美计算了所有隐含层的误差梯度", "引入了监督学习机制，通过误差信号来调整权重"], a: "D", e: "德尔塔学习规则（$\delta$-Rule，又称广义赫布规则或Widrow-Hoff法则）做出的最具里程碑式意义的升级改良，正是创造性地“首次引入了基于强力监督学习机制的误差纠正校子”。模型不再盲目自嗨，而是精准比对当前实际输出与预设期望真实标签之间的直接差值信号（误差梯度），以此来精准反向调节更新连接参数矩阵，直接奠定了现代梯度下降的最早维型。" },
+      { id: 185, c: "深度学习与大模型", s: "随着隐含层增加，反向传播传递给较低层的信息会减少，对网络中权重 的影响也会变小，这会导致 ____ 问题。", o: ["过拟合", "梯度消失", "计算复杂度降低", "局部极值"], a: "B", e: "随着人工全连接或卷积网络的隐含层堆叠数不断拉长，反向传播算法在顺着计算图由输出终点层层向前方输入层逆向回推导数时，长链链式微积分乘法中的连续连乘效应会导致梯度数值发生恐怖的几何下行消散。传递到最底部的较低层（前几层）时梯度流已几乎衰微丢失清零，导致底层权重彻底停滞不前，这便是困扰一代理性AI数年的‘梯度消失’绝症。" },
+      { id: 186, c: "深度学习与大模型", s: "1962  年， Hubel  和  Wiesel  发现猫的视觉皮层中包含简单细胞和复杂细胞。 受此启发，日本科学家福岛邦彦在  1980  年设计了神经网络模型 ____ ，被认为是 卷积神经网络的雏形。", o: ["Hopfield Network", "“ 神经认知 ” 系统  (Neocognitron)", "AlexNet", "LeNet-5"], a: "B", e: "日本科学家福岛邦彦（Kunihiko Fukushima）为了完美重塑Hubel和Wiesel发现的视觉皮层‘分层和感受野’宏观机理，在1980年历史性地构造并提出了名为‘神经认知机’（Neocognitron）的分布式多层级自组织拓扑系统。其内首创设计的S细胞（特征提取）和C细胞（空间平移不变性平移不变性）交替堆叠层级结构，被学术界公认为现代卷积神经网络（CNN）最直接的架构原型与雏形。" },
+      { id: 187, c: "深度学习与大模型", s: "卷积神经网络（ CNN ）之所以能够完美替代全连接网络高效处理图像数 据，主要特点不包括 ____ 。", o: ["局部连接与参数共享", "池化降低数据量", "端到端学习，自动提取特征", "必须使用自回归范式预测下一个像素点"], a: "D", e: "CNN降维打击全连接多层感知机来通吃图像信号的三大黄金技术特征是：通过局部连接和全局滑窗参数共享大幅缩减参数，引入池化下采样强力降低空间数据体积，以及一体化端到端地自适应从图像像素中榨取多尺度抽象特征。而‘必须使用自回归范式逐个预测下一个像素点’属于图像生成模型（如PixelCNN或自回归自编码大模型）的特定离散化演算推断机制，绝非大系CNN的高效通用处理特点，故选D。" },
+      { id: 188, c: "深度学习与大模型", s: "在卷积神经网络中，池化操作（ Pooling ）能够减少参数和计算量，防止 过拟合，同时能使模型对尺度、平移、旋转变化具有一定的 ____ 。", o: ["非线性", "不变性", "稀疏性", "闭行性"], a: "B", e: "池化算子（如最大池化）在数学机理上，是在一个局部的小滑窗感受野像素邻域内硬性筛选提取出最具代表性、能量最高的核心单值激活信号。这种独特的下采样过滤手法，能使得即便是最底层的像素输入发生轻微的地理平移、细小的角度倾斜倾斜旋转、或者一定范围内的物理尺度缩放变化时，经由池化门限的一层层粗粒度过滤，在宏观顶层映射出的高阶语义特征响应依然能稳健保持恒定，从而赋予了整个系统难能可贵的‘平移/旋转鲁棒不变性（Invariance）’。" },
+      { id: 189, c: "深度学习与大模型", s: "CNN  常用  ReLU （线性整流激活函数）来取代传统的  Sigmoid  函数。根 据课件，下列哪项不属于  ReLU  激活函数带来的显著优势 ____ 。", o: ["避免了梯度爆炸和梯度消失问题", "简化计算过程，提高效率", "训练稀疏网络，加速训练", "彻底解决了死亡神经元问题"], a: "D", e: "ReLU（修正线性单元）由于在负区间内（$x \le 0$）其一阶导数恒硬性坍塌为死寂的0，在大型深度神经网络在反向传播遭受某种极大噪声异常梯度的剧烈冲击冲击时，极易导致部分神经元的权重被一次性震荡微调落入该完全负向区间。这会导致这些神经元永久丧失获取任何误差梯度的可能、永远无法再被激活和训练更新，这一宿疾被称为‘Dead ReLU（神经元死亡死亡）’现象。因此ReLU激活器‘不仅没有彻底解决、反而原生带来了死亡神经元风险’，D项描述错误。" },
+      { id: 190, c: "深度学习与大模型", s: "CNN  端到端学习的核心特征是 ____ 。", o: ["特征处理依赖人工设计特征，需领域专家经验", "分多个阶段进行，特征提取和分类分开，效率较低", "单一模型直接处理，自动学习特征，无需人工干预", "对小数据友好，硬件需求仅需  CPU  即可处理"], a: "C", e: "现代深度学习极力推崇的“端到端学习（End-to-End Learning）”范式，其最纯粹、最具产业价值的核心特征就是彻底砸碎并淘汰了传统机器学习中‘需要各路高阶领域专家依靠肉眼和手工经验去费时设计SIFT、HOG等图像特征子描述符、再将其脱节喂给分类器’的低阶分段流水线。它直接搭建一条由输入原始像素点直达输出分类标签的‘单一黑盒统一网络’，全自动、分层级地从数据洪流中自适应萃取、整合特征，全程做到“零人工干预”的智能一体化闭环。" },
+      { id: 191, c: "深度学习与大模型", s: "2015  年，由微软亚洲研究院何恺明等人提出的深度残差网络（ ResNet ）， 其深度达到了破纪录的  152  层，其核心创新是引入了 ____ 结构来解决梯度消失问 题。", o: ["自注意力机制", "跳跃连接（ Skip Connections ）", "遗忘门", "池化层"], a: "B", e: "由何恺明大能团队提出的深度残差网络（ResNet），其足以永载AI史册的最核心革命性工程突破是反其道而行之、在多层级全卷积计算堆叠链条之外引入并强力贯彻了“跳跃连接 / 残差快捷路径（Skip Connections / Shortcut）”。该拓扑构型在中间层间架设了一条纯数学恒等直连管道，促使前一层的干净物理特征和后一层倒推回传的导数梯度流得以100%完全无损地穿越深层卷积迷宫、直接给最初底层补给充能，从原理上彻底终结了百层以上超级极深模型在迭代时发生的梯度湮灭与精度退化崩溃。" },
+      { id: 192, c: "深度学习与大模型", s: "课件在总结卷积神经网络（ CNN ）未考虑 ____ ，无法有效处理时序强相 关的序列问题。", o: ["输入输出的一一对应性", "输入之间的相关性假设", "时序变化", "空间局域特征"], a: "C", e: "标准的传统卷积神经网络（CNN）在物理和设计根基上，是纯粹、全量地聚焦和侧重于捕获和平提图像或栅格数据局域空间网格面内的“空间局部相关空间几何特征”。当它以固定滑窗进行单向向前推断时，其层与层、以及滑动时间线上的各个输入切片样本之间，在算法底层默认被假设为处于相互独立的完全静止、非连续状态，其由于天然“完全忽略且未曾考虑上下文之间的动态连续时序变化”，从而无法原生处理强连续的时序序列长程序列序列任务。" },
+      { id: 193, c: "深度学习与大模型", s: "循环神经网络（ RNN ）的设计受到了大脑认知功能中 “ 学习与记忆 ” 的启 发。根据课件，其基本思想是具备 “ 记忆 ” 能力，具体是通过 ____ 在时间维度上传 递信息。", o: ["输入层的循环连接", "隐藏状态（ hidden state ）", "全连接层的短路连接", "位置编码"], a: "B", e: "循环神经网络（RNN）之所以能具备类似于生物大脑般的长留上下文隐式“记忆”功能，其核心的技术底牌就是系统内部创新引入、随时间步步进演化并且在所有时刻长程共享权重的“隐藏状态（Hidden State，通常记作 $h_t$）”。该状态矩阵在网络每步推进时，不仅吃进当前的即时输入特征，还完整融合裹挟了来自于过去所有历史时刻沉淀积攒下的全部长程上下文线索信息，成功实现了信息跨越时间维度的链式流动传导。" },
+      { id: 194, c: "深度学习与大模型", s: "传统循环神经网络（ RNN ）在处理长序列数据时，很难记住很久之前的 输入信息。为了有效缓解模型训练中梯度消失和爆炸的问题， Hochreiter  等人在 1997  年提出了 ____ 。", o: ["长短时记忆网络（ LSTM ）", "门控递归单元（ GRU ）", "Vision Transformer （ ViT ）", "深度信念网络（ DBN ）"], a: "A", e: "针对传统基本循环网络（Simple RNN）在纵深拓扑演化极长序列时、由于长链导数累乘必然导致的‘早衰式梯度消失与梯度爆炸’、从而彻底遗忘数步前极遥远长程历史依赖的致命心智缺陷，科学家Hochreiter和Schmidhuber于1997年精妙设计提出了‘长短时记忆网络（LSTM，Long Short-Term Memory）’。它通过开辟一条长效、恒定、专用的‘细胞内部状态长河（Cell State）’，配合由输入门、遗忘门、输出门构成的精密乘法门控机制，从底层数学机理上彻底驯服并治愈了长序列梯度崩溃这一历史死结。" },
+      { id: 195, c: "深度学习与大模型", s: "2017  年， Google  研究团队提出了  Transformer 。 Transformer  模型的核心 机制是 ____ 。", o: ["循环结构", "池化操作", "自注意力机制", "卷积操作"], a: "C", e: "2017年由Google大脑研发团队发表的颠覆性学术论文《Attention Is All You Need》，震撼推出了里程碑大作Transformer架构。该框架最特立独行、横扫整个自然语言与跨模态通用大模型世界的底座王牌，就是彻底解雇和抛弃了曾统治时序界多年的循环RNN串行链路以及空间网格CNN，全量由纯粹全并行的‘自注意力机制（Self-Attention Mechanism）’一步到位、无视物理时空跨度地动态测算、聚焦并建立一句话中任意两个词之间的长程语义关联耦合。" },
+      { id: 196, c: "深度学习与大模型", s: "自注意力机制利用注意力分数自适应关注上下文中的关键信息。为了在 并行化的注意力机制中引入位置信息， Transformer  引入了 ____ 。", o: ["位置编码", "能量函数", "双向掩码", "独热编码"], a: "A", e: "由于Transformer模型彻底摒弃了传统的依序迭代、串行消费文本词表的RNN循环机制，这使得输入序列中所有的词Token在被打包同时丢进矩阵执行打满并行的自注意力点积计算时，网络天生对其呈现完全扁平化的‘排列不变性（即无法察觉词与词之间谁在左、谁在右的实际语法长短位置关系）’。为了给系统塞回不可或缺的句法结构、次序因果，Transformer创新引入并采用了在外层强行叠加相加一套具有特定数理周期特性的‘位置编码（Position Encoding）向量时序特征’。" },
+      { id: 197, c: "深度学习与大模型", s: "2020  年， Dosovitskiy  等人提出了视觉  Transformer （ ViT ）。 ViT  模型如 何将图像输入到标准  Transformer  中进行处理 ____ 。", o: ["直接输入一维像素值", "将图像分割为固定大小的非重叠块（ patches ）并视为序列", "利用最大池化层将全图压缩到单一坐标点", "人工设计  SIFT  和  HOG  特征符后作为离散数据投喂"], a: "B", e: "2020年震撼CV界的ViT（Vision Transformer）模型成功实现让纯NLP的Transformer编码器直接通吃二维网格静止图像的精妙神来之笔，正是它在前端创造性地颠覆了像素级的卷积处理逻辑：它强行把输入的一幅完整二维连续图像矩阵，等间距、物理规则地切碎、划分成一整列“尺寸完全固定且互不发生交叉重叠的局部二维小图像补丁块（Patches）”。然后对每个小补丁执行展平与线性投影，以此变相作为一系列“视觉词 Token”序列，严整地输送进标准Transformer大系进行全局自注意力建模。" },
+      { id: 198, c: "计算机视觉", s: "在遥感图像分析中，计算机视觉主要用于：", o: ["实时视频流压缩", "地表覆盖分类与灾害监测", "语音指令识别", "数据加密传输"], a: "B", e: "遥感图像分析作为典型的国防与地理信息空天大数据应用场景，计算机视觉（CV）技术在此处最核心、最具产业落地价值的功能，便是通过对卫星及高空航拍的大尺度多元光谱、几何特征图像进行深度智能解析，从而全自动实现“大范围国土植被地表覆盖分类、城市违章变迁、以及洪涝/山火灾害受灾区域的秒级动态监测评估”。" },
+      { id: 199, c: "计算机视觉", s: "自动驾驶中，计算机视觉技术的核心功能是：", o: ["生成音乐推荐", "实时检测行人、车辆及交通标志", "优化电池续航", "控制车内空调系统"], a: "B", e: "在攸关行车人命安全和高精定位的无人驾驶全栈管线中，车载摄像头源源不断捕获流入的高清外部真实视频图像流是汽车进行物理感知的命脉核心来源。计算机视觉（CV）算法在此承担的核心天职，便是利用多任务深度目标检测、3D边界框回归和语义分割算法，在极其严苛的毫秒级时延内，“实时且高精度地抓取、定位并动态追踪前方道路上的过街行人、周边各类型机动车/非机动车、以及红绿灯和交通警告标志牌”。" },
+      { id: 200, c: "计算机视觉", s: "文字识别（ OCR ）技术的关键步骤是：", o: ["图像边缘检测与字符分割", "语音转文字", "视频帧率调整", "数据压缩存储"], a: "A", e: "光学字符识别（OCR, Optical Character Recognition）技术的主要功能是将输入图片上包含的手写体或印刷体视觉文本高效自动转化为计算机内部可直接编辑的数字化编码字符。在其通用的标准技术路线中，除了最前期的图像去噪增强外，决定其最终识别精确度走向的最卡脖子、最经典的两大关键技术底牌即为“精准圈定文本行边界的图像边缘区域检测、以及将连续单词/汉字执行高精度物理切分落位的字符分割（Character Segmentation）”。" },
+      { id: 201, c: "计算机视觉", s: "增强现实（ AR ）中，计算机视觉的核心作用是____。", o: ["实时跟踪物体位置与姿态", "生成  3D  模型动画", "优化网络传输速度", "加密用户数据"], a: "A", e: "在增强现实（AR）中，系统需要将虚拟数字化三维物体无缝、精准地叠加在现实世界的物理空间中，这就必须依靠计算机视觉技术来对摄像头以及周围现实场景物体进行高精度的实时位置与空间姿态跟踪（Pose Tracking）。" },
+      { id: 202, c: "计算机视觉", s: "遥感图像中检测非法采矿活动，最适合的计算机视觉任务是____。", o: ["图像分类", "目标检测", "语义分割", "实例分割"], a: "B", e: "目标检测（Object Detection）不仅能够识别出图像中是否存在特定物体，还能通过边界框（Bounding Box）精准框选并输出该物体的具体地理坐标与空间位置，非常适合用来普查和定点遥感图像中的非法采矿点。" },
+      { id: 203, c: "自动驾驶", s: "自动驾驶中，多传感器融合主要解决____。", o: ["计算功耗过高", "单一传感器在恶劣天气下的局限性", "用户界面设计", "语音交互延迟"], a: "B", e: "多传感器融合（Multi-Sensor Fusion）通过将激光雷达、毫米波雷达和光学摄像头等多种异构数据源进行深度优势互补，旨在有效克服单一传感器在暴雨、大雾或强光交替等恶劣气象条件下的感知盲区与物理局限性，大幅提升系统的冗余安全性。" },
+      { id: 204, c: "医疗影像", s: "医疗影像诊断中， AI  模型的挑战不包括____。", o: ["数据隐私与伦理问题", "模型可解释性不足", "影像分辨率过高", "标注数据稀缺"], a: "C", e: "医疗影像AI面临数据敏感度高（隐私问题）、医疗黑盒难以支撑临床信任（可解释性不足）以及高水平医学专家标注成本极贵（标注稀缺）等根本性挑战。而影像分辨率过高属于计算硬件和算法吞吐开销问题，并不属于制约模型落地的核心技术瓶颈。" },
+      { id: 205, c: "计算机视觉", s: "手写文字识别属于计算机视觉的哪类任务？", o: ["图像生成", "光学字符识别（ OCR ）", "视频摘要", "图像去噪"], a: "B", e: "光学字符识别（OCR, Optical Character Recognition）是指电子设备检查纸张上的字符，通过检测暗、亮的模式确定其形状，然后用字符识别方法将形状翻译成计算机文字的技术，手写体辨识是其中的经典核心分支。" },
+      { id: 206, c: "计算机视觉", s: "AR  导航中，计算机视觉需结合____。", o: ["实时定位与地图构建（ SLAM ）", "语音合成技术", "区块链验证", "数据库索引优化"], a: "A", e: "在AR（增强现实）室内外导航中，计算机视觉在感知周围视觉特征的同时，必须深度结合SLAM（同步定位与建图）技术，才能在未知的物理环境中边行走边建立增量式地图，并实时推算自身的绝对几何位姿。" },
+      { id: 207, c: "计算机视觉", s: "遥感图像中，语义分割技术可用于____。", o: ["区分农田与森林区域", "压缩图像存储空间", "增强图像对比度", "生成三维地形图"], a: "A", e: "语义分割（Semantic Segmentation）的核心天职是实现像素级别的分类。在卫星遥感领域，通过对每一个像素点赋予类别标签，可以完美实现对地表大范围的连片覆盖物（如区分农田、河流、建筑与森林区域）的自动化精确测绘。" },
+      { id: 208, c: "计算机视觉", s: "在目标检测中， AP  （ Average Precision ）主要用于衡量____。", o: ["模型推理速度", "模型对每个类别的检测精度", "模型参数量", "模型对背景的识别能力"], a: "B", e: "平均正确率（AP）是目标检测任务中评估算法性能最经典的黄金指标。它通过全面整合不同置信度门限下的精确率（Precision）与召回率（Recall）曲线（即P-R曲线围成的面积），精准定量度量模型对某一特定目标类别的综合检测精度表现。" },
+      { id: 209, c: "计算机视觉", s: "以下哪些是  R-CNN  系列模型的组成部分？", o: ["区域提议", "特征提取（ CNN ）", "分类器（ SVM ）", "生成对抗网络"], a: "A, B, C", e: "作为经典的两阶段目标检测开山之作，初代R-CNN的管线标准流程包含三步：首先利用选择性搜索（Selective Search）在图像中提取约2000个候选区域提议，随后驱动深层CNN对这些区域进行特征提取，最后将特征向量喂给传统的SVM（支持向量机）分类器进行类别判定。" },
+      { id: 210, c: "计算机视觉", s: "以下哪些是  Vision Transformer  （ ViT ）的特点？", o: ["将图像分割为固定大小的  Patch", "使用  Transformer  编码器", "使用卷积核进行局部特征提取", "支持全局感受野"], a: "A, B, D", e: "ViT模型彻底打破了CNN一统视觉的范式：它直接将二维图像裁切切碎为固定规格且互不重叠的图像补丁（Patches）并平铺作为一维Token序列，全盘利用标准Transformer编码器进行并行建模。由于其内部核心依托于自注意力机制，从第一层网络开始便能直接实现跨越全图的全局感受野感知，并不依赖传统卷积核。" },
+      { id: 211, c: "计算机视觉", s: "以下哪些是人脸识别系统中可能面临的挑战？", o: ["光照变化", "姿态变化", "年龄变化", "图像分辨率过高"], a: "A, B, C", e: "现实复杂场景中的人脸识别系统极易受到外部物理环境和生物特性的强烈干扰，其中大角度侧脸（姿态变化）、阴阳脸或低光照（光照变化）以及跨越数年的面部轮廓滑移（年龄变化）是公认的跨越感知难关。图像分辨率过高通常带来的是算力开销，而非识别鲁棒性风险。" },
+      { id: 212, c: "计算机视觉", s: "以下哪些方法属于 传统 人脸检测与识别的局限性？", o: ["静态性强的特征设计", "缺乏层次化语义表征", "特征提取极度依赖人工经验 / 领域知识", "计算速度过快"], a: "A, B, C", e: "在深度学习爆发之前，传统的视觉特征提取（如LBP、HOG）严重依赖于行业专家的手工经验和数理直觉（人工设计），这些特征往往属于浅层几何表征，缺乏空间和层次化的深层抽象语义理解，面对复杂光影和遮挡时泛化能力极差。" },
+      { id: 213, c: "计算机视觉", s: "自动驾驶中， YOLO  算法的优势是____。", o: ["单阶段检测，速度快", "仅用于图像分类", "依赖两阶段候选区域生成", "仅处理静态图像"], a: "A", e: "YOLO（You Only Look Once）作为单阶段（One-Stage）目标检测算法的巅峰代表，其核心精髓在于彻底取消了昂贵的候选区域提议生成步骤，直接将目标检测任务等价变形为一个单次回归问题，从而实现了超高的毫秒级推理帧率，完美契合自动驾驶的实时性硬性诉求。" },
+      { id: 214, c: "医疗影像", s: "医疗  AI  诊断系统中，数据增强的作用是____。", o: ["减少训练数据需求并提升泛化性", "加密患者隐私信息", "加快模型推理速度", "降低图像分辨率"], a: "A", e: "临床医学级医学影像往往面临极度严苛的隐私保护，导致可公开用于AI训练的真实病灶样本极度稀缺。数据增强（Data Augmentation）通过对有限的图像进行旋转、镜像、裁剪及色彩微调等几何变换，能在线上变相扩增样本丰度，强力抑制由于过拟合带来的模型早衰，提高泛化性能。" },
+      { id: 215, c: "计算机视觉", s: "遥感图像中，使用卷积神经网络（ CNN ）主要优势是____。", o: ["自动提取多层次空间特征", "减少数据存储需求", "加速图像传输", "增强色彩饱和度"], a: "A", e: "CNN的核心优势在于其自带的特征金字塔分层提取机能。通过浅层卷积捕获边缘线条、深层卷积捕获复杂宏观网格几何轮廓，它能全自动、端到端地从高空遥感像素矩阵中自适应榨取出多层次的抽象空间物理特征，免去了繁琐的人工特征工程。" },
+      { id: 216, c: "自动驾驶", s: "自动驾驶中，车道线检测通常采用____。", o: ["边缘检测", "语音识别算法", "随机森林分类", "生成对抗网络（ GAN ）"], a: "A", e: "在传统和经典的自动驾驶视觉前端感知算法架构中，车道线检测常把车道边缘强烈的像素灰度阶跃变化作为核心切入点，广泛借助Canny边缘检测算子或霍夫变换（Hough Transform）来高效过滤并拟合出车道线几何边界。" },
+      { id: 217, c: "医疗影像", s: "医疗影像  AI  辅助诊断的伦理问题主要是____。", o: ["数据隐私与算法透明度", "图像分辨率不足", "硬件成本过高", "医生操作复杂度"], a: "A", e: "严肃医疗AI系统直接关联到病患的人身生命安全。其伦理核心争议主要聚焦在病患敏感医学影像在云端传输和存储中的‘数据隐私泄露风险’，以及深度大模型因内部非线性映射过于黑盒、缺乏‘算法临床透明度与可解释性’而导致的误诊责任推诿难关。" },
+      { id: 218, c: "计算机视觉", s: "以下哪项指标用于衡量预测区域与真实区域的重叠程度？", o: ["精确率", "召回率", "交并比（ IoU ）", "F1 Score"], a: "C", e: "交并比（IoU, Intersection over Union）是度量目标检测框精准度的黄金几何指标。它通过直接计算模型预测出的Bounding Box与真实Ground Truth边界框之间的‘交集面积除以并集面积’的标量比值，来直观反映两者的几何空间空间重叠紧密程度。" },
+      { id: 219, c: "深度学习与大模型", s: "卷积神经网络（ CNN ）中，池化层（ Pooling ）的主要作用是____。", o: ["增加特征图的通道数", "降低空间维度并增强平移不变性", "直接输出分类结果", "生成新的训练样本"], a: "B", e: "池化层通过在特征图的空间维度（长和宽）上执行特定的小滑窗多像素粗粒度采样（如Max-Pooling），在显著砍掉特征矩阵空间分辨率、压缩算力开销的同时，也赋予了模型对抗局部轻微物理位移的宝贵‘平移不变性’。" },
+      { id: 220, c: "计算机视觉", s: "目标检测任务中，以下哪项是两阶段（ Two-Stage ）算法的代表？", o: ["YOLO", "SSD", "Faster R-CNN", "RetinaNet"], a: "C", e: "目标检测分为单阶段与两阶段。Faster R-CNN是经典的二阶段代表，它首先利用专用的区域建议网络（RPN）从全图特征中提取高质候选边界框（第一阶段），然后再对这些候选区域执行精细的特征分类与二次坐标回归（第二阶段）。而YOLO和SSD则是一步回归的单阶段代表。" },
+      { id: 221, c: "深度学习与大模型", s: "以下哪种损失函数常用于二分类任务？", o: ["均方误差（ MSE ）", "交叉熵损失（ Cross-Entropy ）", "余弦相似度损失", "对比损失（ Contrastive Loss ）"], a: "B", e: "对于二分类（Binary Classification）问题，系统最标准的惩罚度量工具是二元交叉熵损失函数。它利用Sigmoid函数输出的概率置信度来度量当前模型预测概率分布与真实伯努利标签分布之间的KL散度残差，相较于MSE具有更好的负对数梯度收敛特性。" },
+      { id: 222, c: "计算机视觉", s: "在图像预处理中，归一化（ Normalization ）的主要目的是____。", o: ["统一像素值范围，加速模型收敛", "增加图像分辨率", "生成对抗样本", "减少图像存储空间"], a: "A", e: "图像归一化通过将原始范围在0~255的像素矩阵线性等比例平移收敛映射到[0, 1]或[-1, 1]的标准区间内，旨在彻底消除输入各通道因特征量纲和尺度差异带来的损失函数表面扭曲，从而在梯度下降优化中保障各层参数更新方向一致，极大‘加速模型收敛’。" },
+      { id: 223, c: "计算机视觉", s: "传统图像特征描述符（如  SIFT 、 HOG ）与深度学习特征相比，主要劣势是____。", o: ["依赖手工设计，泛化能力弱", "计算速度更快", "对旋转不变性更好", "适合小数据集"], a: "A", e: "传统图像特征描述子（如SIFT、HOG）的底层数理公式完全高度依赖科研专家的几何直觉与手工试错设计（Hand-crafted Features）。这种强主观性的特征只能覆盖特定受限场景，面对千变万化的物理现实复杂环境时往往表现出孱弱且极度僵化的‘泛化适应能力’。" },
+      { id: 224, c: "计算机视觉", s: "实时视频处理中，计算机视觉系统通常需要优先优化____。", o: ["算法计算效率", "模型参数量", "训练数据量", "图像色彩饱和度"], a: "A", e: "为了在实时监控或工业级高速流水线上实现毫无卡顿拖网的视频流在线解析，系统处理每帧图像的时间必须被死死卡在毫秒级门限内。因此，相较于静态盲测，实时视觉系统必须重度倾斜和‘优先优化算法的底层吞吐与计算效率’。" },
+      { id: 225, c: "深度学习与大模型", s: "以下哪种模型首次将  Transformer  引入计算机视觉领域？", o: ["ResNet", "Vision Transformer （ ViT ）", "YOLOv4", "U-Net"], a: "B", e: "2020年底由谷歌团队发表的划时代论文《An Image is Worth 16x16 Words》，隆重推出了Vision Transformer（ViT）架构，首次向全球学术界有力证明了抛弃传统卷积CNN层、完全全量依托纯粹的自注意力机制去直接处理全图像分类任务的断层级强大实力。" },
+      { id: 226, c: "计算机视觉", s: "YOLO  （ You Only Look Once ）的核心思想是____。", o: ["将图像划分为网格，每个网格预测多个边界框，将目标检测转化为单次回归问题", "首先生成候选区域，而后进行分类与回归", "仅支持单类别检测", "依赖两阶段检测流程"], a: "A", e: "YOLO的革命性数理精髓在于把检测视作纯单次端到端的数值映射：它在逻辑上直接将整幅图像拆解划分为 $S \times S$ 的紧密网格面，每个网格中心全自动、并行去预测边界框坐标和对应的类别置信度，彻底将繁重杂乱的检测管线浓缩压缩为了‘单次端到端回归函数计算’。" },
+      { id: 227, c: "计算机视觉", s: "R-CNN  的第一步操作通常是____。", o: ["使用  Selective Search  生成候选区域", "训练区域建议网络（ RPN ）", "对全图进行卷积特征提取", "直接回归边界框坐标"], a: "A", e: "在初代R-CNN算法大系中，系统面对一幅输入的原始像素图时，其管线引擎触发的第一步动作完全依赖于传统的计算机视觉算法——选择性搜索（Selective Search），通过在全图层层纹理合并快速粗略捞取抽选出大约2000个可能含有物体的‘候选区域框（Region Proposals）’。" },
+      { id: 228, c: "计算机视觉", s: "Fast R-CNN  相比  R-CNN  的主要改进是____。", o: ["引入  ROI Pooling  共享卷积特征", "使用  RPN  生成候选区域", "增加掩码预测分支", "改用单阶段检测流程"], a: "A", e: "初代R-CNN极其慢且耗显存，因为要把2000个候选框切图后分别重复送入CNN算2000次。Fast R-CNN做出了里程碑式跨越：它让整张全图只需进CNN算一次提取出全局特征图，然后通过创新研发的‘ROI Pooling（感兴趣区域池化层）’把任意候选框映射切片直接投射到全局特征图上进行特征共享截取，计算效率暴增数百倍。" },
+      { id: 229, c: "计算机视觉", s: "Faster R-CNN  的核心创新是____。", o: ["用  RPN  替代  Selective Search", "引入多任务损失函数", "支持实例分割", "提高检测速度至实时"], a: "A", e: "Fast R-CNN虽然共享了特征，但其产生候选框的第一步依然卡死在极为缓慢、由CPU跑的传统Selective Search上。Faster R-CNN做出了两阶段目标检测史上最重要的技术升级：创新搭建了完全可训练、打满GPU并行的‘区域建议网络（RPN, Region Proposal Network）’来全权替代旧算法，使两阶段检测终于达成了全流程端到端优化。" },
+      { id: 230, c: "计算机视觉", s: "YOLO  与  Faster R-CNN  的主要区别是____。", o: ["YOLO  是单阶段检测， Faster R-CNN  是两阶段", "YOLO  依赖候选区域生成", "Faster R-CNN  不支持多类别检测", "YOLO  仅用于图像分割"], a: "A", e: "这是目标检测算法大系中硬性的范式分野分水岭：YOLO属于没有中间候选区域中继步骤、直接一步到位映射输出目标框的‘单阶段（One-Stage）检测器’；而Faster R-CNN则是必须先由RPN网络趟路生成候选区域（第一步）、再由后端执行头部细分（第二步）的经典‘两阶段（Two-Stage）检测器’。" },
+      { id: 231, c: "计算机视觉", s: "机器视觉的核心任务是什么？", o: ["图像艺术创作", "感知物体几何信息（位置 / 姿态）", "音频信号处理", "文本语义分析"], a: "B", e: "区别于更侧重偏向图像处理和风格美化的泛计算机视觉，在现代智慧制造和智能装配工厂语境下的“机器视觉（Machine Vision）”，其最高频、最核心的工业天职是直接“精确感知、度量被测物理对象的客观空间几何特征信息，并精准判定其在物理三维空间中的三维坐标位置与抓取姿态角度”。" },
+      { id: 232, c: "计算机视觉", s: "推动计算机视觉发展的关键人工智能技术是____。", o: ["专家系统", "卷积神经网络（ CNN ）", "决策树", "聚类算法"], a: "B", e: "自2012年ImageNet视觉竞赛发生颠覆性断层式夺冠以来，以感受野局部连接、全局权重共享、深度非线性组合为核心本领的‘卷积神经网络（CNN）’成为了过去十余年强力推动全球计算机视觉识别精度迈向实用的绝对核心人工智能底层驱动引擎。" },
+      { id: 333, c: "计算机视觉", s: "Haar-AdaBoost  人脸检测的核心步骤不包括____。", o: ["计算归一化特征值", "使用  SVM  直接分类", "级联检测器优化", "提取  Haar  特征模板"], a: "B", e: "经典的Viola-Jones人脸检测模型是一套高度自成体系的流水线：它首先利用积分图加速技术高速抽取特定区域的Haar矩形特征特征模板，接着全权驱动AdaBoost强分类器算法去筛选出最优弱分类器并融合成强分类器，最后通过漏斗状的‘级联检测器（Cascade）’做快速硬性滑窗排查。它底层原生并不包含或使用SVM（支持向量机）分类器。" },
+      { id: 234, c: "计算机视觉", s: "在人脸检测中， Haar  特征不包括以下哪一类？", o: ["边缘特征", "线性特征", "颜色直方图特征", "中心特征"], a: "C", e: "Haar特征（Haar-like Features）作为经典的数字黑白黑白矩形特征子，其数理本质是通过精细计算图像局部中相邻黑白区域之间的‘纯像素灰度差值’来定性勾勒目标的几何物理轮廓。它通常只能细分抽取边缘特征、线条/线性特征以及中心/特定点特征，由于其作用于纯灰度空间，算法本身天然“完全不包含对色彩频域进行统计的颜色直方图特征”。" },
+      { id: 235, c: "计算机视觉", s: "遥感图像识别应用不包括____。", o: ["港口舰船识别", "风力发电识别", "人脸实名认证", "农作物病虫害检测"], a: "C", e: "遥感图像识别（Remote Sensing Image Recognition）特指对来自于千米高空及外太空由人造卫星、高空无人机或航空测绘相机拍摄的大尺度、超广角地球表面光谱表面图像进行语义解译。‘人脸实名认证’属于典型的近距离人体生物特征信息识别，完全不属于空天遥感技术涵盖的应用子范畴。" },
+      { id: 236, c: "计算机视觉", s: "YOLO  （ You Only Look Once ）的核心特点是？", o: ["两阶段检测（先候选框再分类）", "将目标检测转为单次回归问题", "仅处理静态图像", "依赖手工特征"], a: "B", e: "YOLO最大的数理功勋和标签正是其开创性地“彻底将传统繁复冗长、带有剪枝性质的二阶段检测流水线，一刀切地直接重构、变形转化为了一个最干练干脆的单次前向传导非线性回归问题”，极大释放了机器硬件对实时视频流的处理吞吐极限。" },
+      { id: 237, c: "计算机视觉", s: "YOLO  的缺点主要是____。", o: ["对小目标和密集目标检测效果较差", "无法实时推理", "仅支持两阶段检测", "依赖手动设计候选区域"], a: "A", e: "由于初代及早期的YOLO算法其底层采用的是非常坚硬、空间空间空间空间划分颗粒度相对粗糙的二维栅格物理网格划分（如 $7 \times 7$ 或 $13 \times 13$）。当面临画面中大量细小微弱、或者物理空间上彼此深度重叠交织挨着的极密集微小目标群体时，网格由于表征能力受限极易产生灾难性的漏检和框合并偏误。" },
+      { id: 238, c: "计算机视觉", s: "卷积神经网络（ CNN ）对计算机视觉的主要贡献是____。", o: ["降低硬件成本", "自动学习图像特征", "加速数据传输", "简化用户交互"], a: "B", e: "在CNN繁荣前，视觉识别的最大梦魇在于需要工程师凭借数学直觉去痛苦设计SIFT等静态特征，泛化能力极其孱弱。CNN最大的技术史诗功勋，就是通过深度多隐层的叠加以及反向传播机制，成功实现了让网络“完全完全基于海量原始图像样本去‘完全自动、自适应学习并提炼出从底层线条到高层宏观语义的各阶金字塔式图像特征表征’”。" },
+      { id: 239, c: "计算机视觉", s: "Mask R-CNN  可以同时完成的任务是____。", o: ["目标检测和实例分割", "仅目标分类", "图像超分辨率", "视频动作识别"], a: "A", e: "何恺明大能团队于2017年提出的Mask R-CNN架构，在原本高分统治两阶段检测的Faster R-CNN网络头部中，极具智慧地平行额外加塞扩展了一个专门用来预测高精像素位遮罩的Mask二进制分支（FCN），从而使其在一个一元模型架构内完美达成了“不仅能精准输出物体的目标分类与Bounding Box位置检测、还能无缝输出业内最渴望的像素级高精‘实例分割（Instance Segmentation）’图”的王牌跨越。" },
+      { id: 240, c: "自然语言处理", s: "语言在机器中的哪一种表示有利于进行语义相似性的计算？", o: ["独热编码；", "ASCII  码；", "UTF-8  编码；", "词向量"], a: "D", e: "词向量（Word Embedding，如Word2Vec）将分立离散的单词字符串强行映射并高能平铺压缩到低维密集的连续实数多元向量空间中。在这种高阶几何空间中，语义内涵极其接近或者具有强烈关联分布特征的两个词，其对应的数学向量在空间中的夹角会自然收拢变小，因而能高精度利用余弦相似度（Cosine Similarity）来精密计量它们的语义亲疏相关性。" },
+      { id: 241, c: "自然语言处理", s: "机器在建模语言问题用什么方法处理不确定性预测？", o: ["对输出进行概率建模；", "使用神经网络；", "梯度优化方法；", "学习函数关系"], a: "A", e: "人类语言（Natural Language）具备与生俱来的高度多义性、上下文强依赖性以及多重语法模糊弹性。为了在海量可能的后续单词语流中做出最理性的吐字决策，现代深度学习和统计大模型最牢固的科学基础即是“严格将下一个可能输出的Token集合放在多维离散空间中执行完备的‘概率建模（Probability Modeling）与条件条件概率预测分布估计’”。" },
+      { id: 242, c: "自然语言处理", s: "语言模型的核心目标是什么？", o: ["生成随机文本；", "预测一段文本的概率分布 ;", "识别图像中的文字 ;", "翻译不同语言"], a: "B", e: "无论是最古老的N-gram统计语言学模型，还是现代数千亿级别傲视全球的各类生成式预训练Transformer，在最底层、最纯粹的数学物理原理定义上，全语系语言模型（Language Model）永恒不变的核心天职与最高数理准则都是：在既定字符空间内，“精准量化、计算并预测一段给定的文本单词序列序列序列在整个人类已知母语世界的真实概率分布规律（Probability Distribution）”。" },
+      { id: 243, c: "自然语言处理", s: "____ 是一类预测模型，它假设当前时间点的输出仅依赖于之前的输出。", o: ["神经网络 ;", "回归模型 ;", "自回归语言模型 ;", "分类模型"], a: "C", e: "自回归语言模型（Autoregressive Language Model，如享誉全球的GPT系列大模型）的核心运行推断逻辑严苛遵循马尔可夫链式因果：它在吐出最新时刻的第 $t$ 个Token字词时，其条件概率输入严格且仅依赖于网络在此之前已经生成的 $t-1$ 个历史词字文本序列切片，像滚雪球一般周而复始实现逐词自循环吐字生成。" },
+      { id: 244, c: "深度学习与大模型", s: "目前研究表明大模型的参数数量与效果之间的关系符合____ 。", o: ["大数定律", "尺度定律 （ Scaling Law ）", "中心极限定理", "万能近似定理"], a: "B", e: "尺度定律（Scaling Law，又称规模法则）是现代AGI大模型时代的最高技术指挥棒。OpenAI等顶级机构研究重磅表明：大语言模型（LLM）的终期交叉熵损失残差值，会随着网络“总有效参数量规模（N）、用于训练的原始Token语料数据集大小（D）以及注入的训练总算力显存资源（C）”在跨越数个数量级上行时，呈现出近乎严丝合缝的单调幂律（Power-law）断层级下行收敛改善，这有力指导了大厂疯狂堆叠算力的宏大远征。" },
+      { id: 245, c: "自然语言处理", s: "以下哪种情况最可能导致模型产生幻觉？", o: ["训练集数据中包含大量噪声或错误信息", "模型参数量过小", "用户输入过于简短", "使用过高的温度（ Temperature ）参数"], a: "A", e: "幻觉（Hallucination）是指大模型生成看似极具逻辑流畅、实则内容却完全虚构、违背物理现实的客观事实性事实错误现象。其最顽固、最具毁灭性的源头根基，正是由于模型在长达数月的无监督预训练中，“生吞活剥吃进了海量互联网未经过深度全盘清洗、大面积包含大量杜撰历史、矛盾信息信息冲突及造谣伪科学文本的严重脏噪声错误语料数据”。" },
+      { id: 246, c: "自然语言处理", s: "以下哪种方法被广泛用于缓解模型幻觉问题？", o: ["提高模型的推理速度", "增加模型层数", "引入外部知识库进行事实性验证", "减少训练数据规模"], a: "C", e: "为了在不更改大模型固有内部静态参数参数矩阵的前提下最快斩断幻觉发生，最具实用价值的绝活便是搭建并结合RAG（检索增强生成）系统架构。即在用户提问时，“首先通过外挂垂直引流引流搜索引擎或本地向量图数据库，将最新、最客观且经事实性查验验证过的真实文本片段作为确定性的已知论据和上下文约束一同硬性塞给模型”，逼迫其只能依证据答题、严禁胡编乱造。" },
+      { id: 247, c: "自然语言处理", s: "幻觉问题在以下哪个任务中影响最严重？", o: ["情感分析", "机器翻译", "医疗诊断建议生成", "文本摘要"], a: "C", e: "幻觉带来的恶性后果与业务场景的容错阈值直接挂钩。在诸如泛情感闲聊或摘要缩写中，轻微的虚构并不会伤及根本；但一旦将大模型直接不加防护地放置于“生成严肃的临床医疗诊断处方、病症判定及用药建议”等高危核心生命生产场景中时，任何一丁点不合逻辑的药量虚构或病情幻觉都将直接付出惨烈的人命代价。" },
+      { id: 248, c: "自然语言处理", s: "哪种模型架构设计能有效减少幻觉？", o: ["纯解码器架构（如  GPT ）", "编码器 - 解码器架构（如  T5 ）", "检索增强生成（ RAG ）", "卷积神经网络（ CNN ）"], a: "C", e: "检索增强生成（RAG, Retrieval-Augmented Generation）在软件系统工程设计层面专门为破除幻觉而生：它用一个专用的‘检索引擎（Retriever）’在海量可信企业专网文档库或实时公网中提取相关事实，强行注入大模型Prompt的背景论据框中。这使得生成模型在回答时具备了坚实的可查证性、有据可依，完美拉下了纯生成模型的幻觉脱缰野马。" },
+      { id: 249, c: "自然语言处理", s: "以下哪种提示（ Prompt ）策略有助于降低幻觉风险？", o: ["要求模型 “ 自由发挥想象力 ”", "明确要求 “ 仅基于可信来源回答 ”", "使用开放式问题", "提供大量无关联的示例"], a: "B", e: "在进行高级Prompt提示词工程时，通过在System系统全局提示词框中强力贯彻极度刚性的行为边界契约（如：‘你必须且只能严格基于我给你提供的已知参考来源来回答用户。如果该参考中找不到对应事实，请老实回答不知道，严禁脑补任何传闻！’），能够以低成本极高能地抑制生成模型的狂妄遐想、显著收窄并降低幻觉风险。" },
+      { id: 250, c: "自然语言处理", s: "词向量的核心目标是什么？", o: ["将词语转换为独热编码（ One-Hot Encoding ）", "在低维连续向量空间中捕捉词语的语义和语法关系", "提高文本分类任务的速度", "减少词典大小"], a: "B", e: "传统计算机只能生硬辨识 discrete 离散字符编码。词向量（Word Embedding）最核心的数理天职，是把这种毫无关联的空间独热码，高维映射、压缩到包含特定维度（如300或768维）的低维连续分布实数向量坐标系中。在如此开辟出的高维超平面内，通过坐标距离和几何基底，高鲁棒“原汁原味捕捉、承载并表达出了单词与单词之间深厚内在的自然语言词义、近义语义相似度相似度相似度以及深层句法/语法变换关系”。" },
+      { id: 251, c: "自然语言处理", s: "词向量之间的余弦相似度通常用于衡量什么？", o: ["词语的拼写相似性", "词语的语义相似性", "句子的语法复杂度", "文本的情感极性"], a: "B", e: "在多维词向量空间中，计算两个Dense高维向量的余弦相似度（Cosine Similarity），其本质上是去精密测算这两个向量线在欧氏多维超空间里的几何夹角余弦值大小。数值越逼近1，代表它们在空间坐标上的指向高度共鸣一致，对应到语言学规律中，则深刻折射出这两者在上下文中的共同出现概率以及高度贴近的“深层核心语义相似相似性相似度”。" },
+      { id: 252, c: "自然语言处理", s: "以下哪种应用场景最依赖语言模型？", o: ["人脸识别", "机器翻译", "自动驾驶路径规划", "医学影像分析"], a: "B", e: "机器翻译（Machine Translation）在底层演进的数理本质上，是高度依赖于条件概率序列映射的典型Sequence-to-Sequence双向语言学建模。它必须依靠强大的编解码预训练语言模型去吃进源语言文本，并在目标语系空间内以最大联合概率分布去预测并吐出一长串符合人类语法通顺习惯习惯序列的高效目标文字，是纯粹的NLP核心地盘。" },
+      { id: 253, c: "深度学习与大模型", s: "GPT  （生成式预训练模型）的核心特点是？", o: ["仅支持文本分类任务", "基于自回归生成（逐词生成文本）", "仅使用图像数据训练", "模型参数量固定为  1  亿"], a: "B", e: "作为当代AGI预训练大模型分支的半壁江山，OpenAI主导主导研发的GPT家族大模型在骨子里流淌着最纯粹的“自回归（Autoregressive）”生成式血液。由于在内部自注意力层配备了刚性的因果注意力掩码（Causal Masking），模型前向推理时永远无法看到未来的词，迫使其只能死死死死锁住左侧历史文字，以概率分布最大化逐Token单向地“向右边逐字预测并吐出下一个词”。" },
+      { id: 254, c: "自然语言处理", s: "以下哪种技术能帮助语言模型理解用户意图？", o: ["数据增强（ Data Augmentation ）", "指令微调（ Instruction Tuning ）", "随机森林分类器", "图像分割"], a: "B", e: "海量预训练完输出的原始基座模型（Base Model）空有满腹人类知识，却只懂盲目无休止地往下续写文章，无法听懂人话、更无法配合人类执行具体任务。指令微调（Instruction Tuning）通过搜集和构建数十万条干净利落的高质量“人类提示指令提示-标准期望答复”对齐数据集，对基座进行高强度有监督微调，从而一举激活了模型并使其能够瞬间“听懂并深度遵循人类提出的主观任务意图”。" },
+      { id: 255, c: "深度学习与大模型", s: "大模型 “ 涌现能力 ” （ Emergent Ability ）指的是____。", o: ["模型参数越多，训练速度越快", "小模型表现优于大模型", "模型在参数量达到阈值后突然具备新能力", "模型自动删除无用数据"], a: "C", e: "这是现代深度强化学习与千亿大模型时代最神秘、最震撼业内的核心自然科学奇观：当模型的网络参数量在某一临界规模以下时（如数百万、数千万参数），模型在诸如多步复杂推理、高级数理推导以及三阶情境理解等复杂认知测试上的成绩表现近乎于纯随机盲猜（毫无智能）；而一旦“大模型的网络参数量、注入训练语料数据规模突破了某一个极其隐秘的关键断层级阈值后，系统会突然像开窍一样展现出直线飙升、无中生有的卓越高阶新心智能力（如In-Context Learning内敛学习、思维链推理）”，这就是涌现能力。" },
+      { id: 256, c: "自然语言处理", s: "在自然语言处理中， “ 词向量 ” （ Word Embedding ）的作用是____。", o: ["将词语转换为计算机可理解的数值向量", "压缩文本文件大小", "生成艺术风格图片", "优化硬盘存储空间"], a: "A", e: "在自然语言处理（NLP）数字中枢中，计算机底层的逻辑门硬件电路根本无法直接对离散的手写汉字或英语字母等字符串进行微积分求导计算。词向量（Word Embedding）就像是连接人类高阶文本与机器数理底座之间不可或缺的翻译桥梁，它的核心天职就是“将离散分立的文字和词汇高能转化并映射为包含多维实数的、计算机能进行连续矩阵乘法与微分求导的数值特征特征特征向量”。" },
+      { id: 257, c: "自然语言处理", s: "以下哪项技术可以帮助大模型减少生成不真实内容（如虚构事实）的问题？", o: ["增加模型参数规模", "使用更高精度的浮点数", "与搜索引擎实时结合验证", "提高训练数据压缩率"], a: "C", e: "大模型内部静态参数由于受到重训周期的限制，只能保存过去的“死记忆”，一旦询问其未曾预训练过的外部动态实时事实，系统在概率吐字驱动下极易发生离谱的事实性瞎编虚构。通过在系统外层设计精巧的实时工程闭环——“强制促使大模型在产生最终输出结果之前，与实时主流搜索引擎接口进行无缝连通、拉取当下互联网最硬核且经查验的最新权威事实进行实时交叉验证对齐”，能够直接、粗暴且最立竿见影地斩断因信息滞后引起的内容虚构。" },
+      { id: 258, c: "深度学习与大模型", s: "大语言模型（如  ChatGPT ）的 “ 预训练 ” 阶段主要学习的是____。", o: ["特定任务（如翻译）的标注数据", "海量无标注文本中的语言规律", "如何操作机器人手臂", "数学公式推导"], a: "B", e: "预训练（Pre-training）是大模型吞噬全网算力最惨烈、耗时最漫长的庞大第一阶段。它采取极高能、完全不依赖人工极昂贵标准标签的‘自监督学习（Self-supervised Learning）’形式，疯狂生吞吞噬掉以数万亿Token计的互联网海量无标注通用原始网页文本，从而在漫长海量的自我猜词和完形填空中，自适应内化并全面吸干了整个人类自然语言体系中博大精深的语序规律、语法结构句法及广泛的世界知识常识大底座。" },
+      { id: 259, c: "自然语言处理", s: "以下哪个是自然语言处理的典型应用？", o: ["人脸识别解锁手机", "智能客服自动回复问题", "自动驾驶汽车避障", "无人机航拍摄影"], a: "B", e: "智能客服自动回复系统（Smart QA Chatbot）涉及了NLP大系中全栈核心技术的产业落地全流程：包括对用户输入的一大段日常口语大白话文本进行底层的意图识别、高精实体抽取、相似度多维度匹配计算、并最终在知识库、图谱或生成模型中自动匹配整合出逻辑流畅、语义准确的文本级回复，是标准的自然语言处理（NLP）商用标杆代表。而A、C、D项均属于计算机视觉（CV）或控制论范畴。" },
+      { id: 260, c: "自然语言处理", s: "自然语言处理（ NLP ）的主要目标是让计算机能够____。", o: ["播放高清视频", "理解和生成人类语言", "识别图像中的物体", "控制机器人行走"], a: "B", e: "作为人工智能学术界最具挑战性的“明珠”交叉学科分支，自然语言处理（NLP, Natural Language Processing）自诞生起所背负的科学战略终极天职和奋斗追求，就是旨在彻底打破跨越数字无机世界与有机人类思想文明之间的沟通天险——“让冰冷且死板的计算机数字计算系统，能够完全像高智慧人类个体一样，具备毫无障碍、高度顺畅、深度透彻且富有深度逻辑可解释性地去自主‘听懂、理解、思考、推理、以及高能自动生成人类自然语言（如汉语、英语等）’的通神本领”。" },
+      { id: 261, c: "深度学习与大模型", s: "以下哪种方法可以降低大模型的碳排放？", o: ["使用更多  GPU  集群训练", "采用更高效的模型架构", "增加训练数据量", "提高模型参数量"], a: "B", e: "采用高能效的模型架构（如混合专家模型MoE或轻量化网络设计）可以大幅降低训练与推理所需的浮点运算量，从而直接减少能耗与碳排放。" },
+      { id: 262, c: "自然语言处理", s: "以下哪个任务不属于自然语言处理（ NLP ）的典型应用？", o: ["机器翻译", "情感分析", "图像分类", "文本摘要"], a: "C", e: "图像分类属于计算机视觉（CV）领域的核心任务，不属于处理人类文本语言的自然语言处理（NLP）范畴。" },
+      { id: 263, c: "深度学习与大模型", s: "Transformer  模型的核心机制是？", o: ["循环神经网络（ RNN ）", "卷积神经网络（ CNN ）", "注意力机制（ Attention ）", "强化学习（ Reinforcement Learning ）"], a: "C", e: "Transformer模型抛弃了传统的循环和卷积结构，全量依赖自注意力机制（Self-Attention）来捕获序列中任意两个位置之间的全局长程依赖关系。" },
+      { id: 264, c: "大模型伦理", s: "大模型伦理问题中的 “ 幻觉 ” （ Hallucination ）指什么？", o: ["模型生成重复内容", "模型生成与输入无关的虚假信息", "模型训练速度过慢", "模型无法处理长文本"], a: "B", e: "大模型的幻觉是指模型生成的内容在语法逻辑上流畅自洽，但在事实上完全虚构、错误或缺乏现实依据的现象。" },
+      { id: 265, c: "大模型伦理", s: "模型幻觉问题的根本原因可能包括：", o: ["训练数据与真实世界知识存在偏差", "模型参数量过大", "GPU  显存不足", "用户输入语法错误"], a: "A", e: "训练语料中夹杂的大量噪声、错误或矛盾信息，以及预训练阶段最大似然目标的泛化缺陷，是大模型产生事实性幻觉的底层根源。" },
+      { id: 266, c: "知识图谱", s: "知识图谱的核心目标是什么？", o: ["存储海量非结构化文本", "通过结构化语义网络描述实体及其关系", "加速图像识别任务", "优化神经网络训练速度"], a: "B", e: "知识图谱旨在建立一个高度结构化的语义网络，使用节点代表实体、边代表关系（通常表示为三元组），从而以机器可读的方式表达客观世界的显式知识。" },
+      { id: 267, c: "知识图谱", s: "以下哪种数据库类型最适合存储知识图谱？", o: ["关系型数据库（如  MySQL ）", "文档数据库（如  MongoDB ）", "键值数据库（如  Redis ）", "图数据库（如  Neo4j ）"], a: "D", e: "图数据库专门针对图结构进行了底层存储和关联查询优化，能够高效执行复杂、多跳的实体间关系路径检索，是知识图谱的最佳底层存储选型。" },
+      { id: 268, c: "知识图谱", s: "知识图谱构建的关键步骤不包括：", o: ["实体识别", "关系抽取", "图像分类", "知识融合"], a: "C", e: "知识图谱的构建主要涉及信息抽取（实体、关系、属性抽取）和知识整合，图像分类属于计算机视觉层面的操作，非图谱构建的基本语义抽取链路。" },
+      { id: 269, c: "知识图谱", s: "知识图谱的典型应用场景是？", o: ["图像风格迁移", "语音信号降噪", "智能问答系统（如谷歌搜索）", "视频压缩编码"], a: "C", e: "知识图谱能提供精准的结构化事实推理支撑，广泛应用于搜索引擎的语义检索、智能推荐以及基于确定性事实的智能问答系统中。" },
+      { id: 270, c: "知识图谱", s: "知识图谱与传统数据库的核心区别在于？", o: ["存储容量更大", "强调实体间的语义关联", "支持事务处理", "读写速度更快"], a: "B", e: "传统关系型数据库侧重于二维表的范式维护，而知识图谱最大的优势在于原生表达和建模现实世界实体之间错综复杂的丰富‘语义关系网络’。" },
+      { id: 271, c: "知识图谱", s: "知识图谱的 “ 本体（ Ontology ） ” 主要用于：", o: ["定义实体类别与关系的逻辑约束", "优化图数据库的存储效率", "压缩知识表示空间", "生成自然语言描述"], a: "A", e: "本体是知识图谱的骨架和顶层模式设计，用于在元数据层面对客观世界各个概念类别、属性及其间的层级和逻辑规则进行严密的范畴约束。" },
+      { id: 272, c: "知识图谱", s: "知识图谱一种结构化的语义知识库，将知识以 ____ 的形式存下来？", o: ["数组", "树", "图", "表"], a: "C", e: "知识图谱在抽象数学拓扑上表现为一个具有多关系事实标签的有向非对称‘图’（Graph）结构。" },
+      { id: 273, c: "知识图谱", s: "以下哪个不是知识图谱的主要组成部分？", o: ["边", "节点", "关系事实", "本体"], a: "D", e: "知识图谱的基本数据组成是实体（节点）和关系事实（边）。本体（Ontology）属于定义其上层逻辑框架的图谱架构层，在严格分类中不列为实体关系基础实例组成。" },
+      { id: 274, c: "知识图谱", s: "在知识图谱中，实体不可以是？", o: ["实例", "数值", "时间", "某人出生于某地"], a: "D", e: "“某人出生于某地”本身是一个包含主语、谓语和宾语的完整结构化‘关系事实三元组’，而非一个独立的孤立‘实体’概念。" },
+      { id: 275, c: "知识图谱", s: "知识图谱通常用 ____ 来表示。", o: ["数值向量", "字符串序列", "有向图", "二叉树"], a: "C", e: "知识图谱以‘实体-关系-实体’（SPO三元组）来传导知识，其天然呈现为一个具备方向和特异性关系的‘有向图’拓扑。" },
+      { id: 276, c: "大模型工程", s: "____ 是一种结合了信息检索技术和大型语言模型生成的人工智能技术。", o: ["检索增强生成（简称  RAG ）", "知识图谱", "本体", "模型压缩"], a: "A", e: "检索增强生成（RAG）通过引入轻量外部向量数据库检索引流，克服了大模型自身参数记忆在时间壁垒和专业深度上的不足，是现代大模型应用工程的标配。" },
+      { id: 277, c: "大模型工程", s: "检索增强生成（ RAG ）的核心思想是？", o: ["仅依赖生成模型内部知识 ;", "结合检索外部知识库与生成模型的能力 ;", "完全替代传统搜索引擎 ;", "仅优化生成模型的推理速度"], a: "B", e: "RAG的核心是通过在推理阶段将外部权威数据源检索到的实时参考资料作为动态上下文喂给LLM，从而辅助大模型做出准确无误的事实文本生成。" },
+      { id: 278, c: "大模型工程", s: "检索增强生成（ RAG ）模型的工作流程通常分为哪两个主要阶段？", o: ["训练与微调", "检索与生成", "编码与解码", "分词与向量化"], a: "B", e: "RAG的标准在线工作管线明确划分为：根据用户提示词去私域文档或公网获取事实片段的‘检索阶段’，以及将其合并进Prompt送入模型生成答复的‘生成阶段’。" },
+      { id: 279, c: "大模型工程", s: "检索增强生成（ RAG ）相比纯生成模型（如  GPT ）的主要优势是？", o: ["减少模型参数量 ;", "降低对训练数据量的依赖 ;", "提高生成内容的事实准确性 ;", "完全消除生成重复文本的问题"], a: "C", e: "通过让模型‘查书考试’而非闭卷默写，RAG能提供坚实、可回溯的事实性文本约束，从而极大地提高了生成内容的事实准确率，有力压制了模型幻觉。" },
+      { id: 280, c: "AI历史与概念", s: "莫拉维克悖论的核心观点是以下哪一项？", o: ["人类的高级逻辑推理能力难以被机器模仿", "一些对人类来说简单的感知 and 运动技能，机器实现起来反而比高级推理困难", "人类和机器在低级技能上的学习速度相同", "机器无法进行复杂的数学计算"], a: "B", e: "莫拉维克悖论指出，对AI来说，实现高阶逻辑推理（如博弈下棋）往往只需极少算力；而让其模仿人类一岁婴孩具备的原生运动感知技能（如叠衣服、在复杂地形行走）反而需要极为恐怖的计算量与工程投入。" },
+      { id: 281, c: "机器人学", s: "以下哪项是莫拉维克悖论的典型例子？", o: ["AlphaGo  难以击败围棋世界冠军", "机器人依靠复杂技术完成了叠衣服这一简单的任务", "自动驾驶汽车可以识别交通信号灯", "语音助手可以用于回答问题"], a: "B", e: "“叠衣服”对人类而言是不需思考的本能肌肉技能，但由于衣物是非刚性柔性体，对机器视觉的三维感知模型建构及机械臂触觉力控提出了极端恐怖的技术门槛，完美体现了莫拉维克悖论。" },
+      { id: 282, c: "AI历史与概念", s: "莫拉维克悖论的提出者不包括以下哪位？", o: ["汉斯 · 莫拉维克", "罗德尼 · 布鲁克斯", "马文 · 明斯基", "艾伦 · 图灵"], a: "D", e: "该悖论在20世纪80年代由汉斯·莫拉维克、布鲁克斯和明斯基等人共同定性定型提出。图灵逝世早于人工智能诞生，并未直接参与该理论总结。" },
+      { id: 283, c: "强化学习与智能体", s: "强化学习的核心机制是？", o: ["通过监督数据优化模型", "通过试错和奖励信号调整策略", "基于无标签数据聚类", "依赖先验知识直接决策"], a: "B", e: "强化学习（Reinforcement Learning）模拟生物条件反射机制，核心是通过智能体在环境中的动态交互、自适应试错，并依据环境反馈的奖惩回报（Reward）来持续优化其最优动作选择序列策略。" },
+      { id: 284, c: "强化学习与智能体", s: "马尔可夫决策过程（ MDP ）的五元组不包括以下哪项？", o: ["状态空间（ S ）", "动作空间（ A ）", "奖励函数（ R ）", "学习率（ α ）"], a: "D", e: "标准的马尔可夫决策过程（MDP）数理框架由 $⟨S, A, P, R, \gamma⟩$ 五元组定性约束，其中学习率 $\alpha$ 属于具体的数值算法优化超参数，非MDP本身定义的数学模型元组件。" },
+      { id: 285, c: "强化学习与智能体", s: "下列哪一项符合深度强化学习的特点？", o: ["结合监督学习和无监督学习", "使用神经网络处理高维和连续的状态输入", "仅依赖无监督学习", "完全不需要环境交互"], a: "B", e: "深度强化学习（DRL）通过结合深度神经网络（负责强力特征提取与状态函数表征）与强化学习（负责策略控制寻优），使系统能够直接处理高维（如图像像素）或连续的高维复杂控制状态。" },
+      { id: 286, c: "强化学习与智能体", s: "AlphaGo  的成功主要使用了哪两项技术的结合？", o: ["规划技术与无监督学习", "强化学习与深度学习", "聚类分析与逻辑回归", "卷积神经网络与循环神经网络"], a: "B", e: "AlphaGo的底层王牌正是深度学习（利用大层CNN评估棋盘局部胜率）与强化学习（利用自我博弈策略网络优化配合蒙特卡洛树搜索MCTS）的惊世融合。" },
+      { id: 287, c: "强化学习与智能体", s: "强化学习中的折扣因子 γ 的主要作用是？", o: ["调整学习率", "是折扣累计回报  G  的核心参数，用于调节当前奖励与未来奖励的重要性", "限制动作空间大小", "限制状态空间大小"], a: "B", e: "折扣因子 $\gamma \in [0, 1]$ 专门用于定量折现未来时间步的长远长远期望回报，其值越小意味着智能体越近视短视、更看重眼前利益，越大则意味着视野越长远。" },
+      { id: 288, c: "强化学习与智能体", s: "关于强化学习与监督学习，下面哪一个说法正确？", o: ["两者都需要大量标注独立同分布数据", "强化学习依赖试错和延迟奖励", "监督学习主要用于处理连续决策问题", "两者都基于规则推理"], a: "B", e: "不同于监督学习必须依赖一元对齐、即时闭环的 Ground Truth 标签，强化学习不提供直接指导标签，而是彻底依赖行动在时空长流中的多步试错及来自环境滞后给出的延迟评判奖励。" },
+      { id: 289, c: "强化学习与智能体", s: "在强化学习中，智能体的最终目标是最大化什么？", o: ["单步奖励", "累计折扣奖励", "动作执行速度", "状态转移频率"], a: "B", e: "智能体的训练战略指向永远是为了去夺取长期的宏观总体宏观总体最大化期望：即最大化时间轴线上的全生命周期累计折扣总回报。" },
+      { id: 290, c: "强化学习与智能体", s: "关于环境分类，以下哪个智能体的环境是完全可观察的？", o: ["自动驾驶出租车", "医疗诊断智能体", "围棋  AlphaGo", "零件挑选机器人"], a: "C", e: "围棋游戏是一个标准的完全可观察（Fully Observable）静态环境，博弈双方均能在任何时刻获取棋盘全量无遮挡、无丢失的100%确定性状态数据。" },
+      { id: 291, c: "强化学习与智能体", s: "在强化学习中，策略（ Policy ）的功能是？", o: ["感知环境状态", "执行物理动作", "定义状态到动作的映射", "计算即时奖励"], a: "C", e: "策略 $\pi$ 是整个智能体的脑核心决策中枢，在数学形式上将其表达为一个“将当前所处的环境状态空间 $S$ 无缝映射到动作执行概率分布空间 $A$”的数学函数。" },
+      { id: 292, c: "强化学习与智能体", s: "HumanPlus  机器人训练中使用的强化学习算法是？", o: ["Q-learning", "近端策略优化（ PPO ）", "深度确定性策略梯度（ DDPG ）", "基于模型的强化学习算法"], a: "B", e: "在现代类人人形实体机器人控制与运动机能训练中，PPO（Proximal Policy Optimization，近端策略优化）由于其出色的剪切项约束、极稳健的训练稳定度和高样本利用效率，成为了行业标配。" },
+      { id: 293, c: "强化学习与智能体", s: "以下哪种不是定义智能体的规则（）", o: ["需要具备识别环境的能力", "根据观察做出决定", "决定应该导致行动", "行动可以是随意的"], a: "D", e: "人工智能中的智能体（Agent）必须朝向最大化既定效用度量或目标而战，其决策导出的行动必须具有理性和意图性，不能是胡乱、无意义且完全随意的杂乱动作。" },
+      { id: 294, c: "强化学习与智能体", s: "以下关于智能体的说法，哪个是不正确的（）", o: ["智能体是任何可以通过传感器感知其环境并通过执行器对环境进行作用的主体", "智能体根据观察做出决定", "智能体基于它的感知及它能执行的行动 “ 做正确的事 ”", "理性智能体知道他行动的实际效果并做出行动获得完美结果"], a: "D", e: "理性并不等同于全知全能（Omniscient）。理性智能体只能保证在其当前掌握有限的、历史感知的先验经验边界内做出最契合期望的抉择，并无法拍胸脯预测物理世界中所有小概率突发意外以确保百分百获得无瑕完美结果。" },
+      { id: 295, c: "强化学习与智能体", s: "智能体的理性不取决于以下哪个选项（）", o: ["给定的性能度量", "自身动作的随机性", "内在的先验知识", "感知序列"], a: "B", e: "智能体的理性程度是由其被硬性赋予的客观性能度量指标、自身的内隐先验知识以及此前感知积攒的历史序列共同决定的，其自身并不追求动作的盲目随机性。" },
+      { id: 296, c: "强化学习与智能体", s: "智能体的任务环境描述不包含下面哪个选项（）", o: ["性能度量", "环境", "状态空间", "执行器"], a: "C", e: "针对智能体进行任务环境工程建模时，业界统一遵循经典PEAS框架定性定量剖析：即Performance（性能度量）、Environment（外部环境）、Actuators（执行器/效应器）和Sensors（传感器）。其不单独列入‘状态空间’这一子超参数。" },
+      { id: 297, c: "强化学习与智能体", s: "以下哪一项不属于医疗诊断智能体的  PEAS  任务环境（）", o: ["医院", "医生的行医执照", "触摸屏", "疾病诊断准确性"], a: "B", e: "在医疗问诊Agent的PEAS要素切片中，医院属于外部环境，触摸屏属于传感器/输入端，诊断准确率属于高层的性能度量。而现实中的‘医生的行医执照’非该AI系统的工程元组件。" },
+      { id: 298, c: "强化学习与智能体", s: "以下哪一项不能作为智能体环境类型的分类依据（）", o: ["传感器是否获取环境的所有状态", "智能体的决策是否需要获取环境状态", "环境的下一个状态是否完全取决于当前状态和智能体的行动", "智能体当前行动的选择是否不依赖于以前的行动"], a: "B", e: "判断环境属于完全/部分可观察、确定/随机、片段/延续等，均源自对环境固有数理规律的挖掘。所有智能体为了理性生存，其‘决策过程必须且毫无疑问均需要获取环境状态信息’，故B不能用作环境分类的差别依据。" },
+      { id: 299, c: "强化学习与智能体", s: "以下关于环境类型的说法哪项是正确的（）", o: ["自动驾驶任务中环境是完全可观察的", "围棋任务中环境中环境是部分可观察的", "零件挑选机器人的任务环境是动态的", "自动驾驶任务中环境是离散的"], a: "C", e: "零件挑选机器人在流水线上工作时，由于工件流持续流动且外部环境状态随着物理时间迁徙在不断发生不可逆的物理位移改变（非静止），因而属于典型的动态（Dynamic）环境。" },
+      { id: 300, c: "自动驾驶", s: "根据人工智能中智能体任务环境分类标准，以下关于自动驾驶环境属性的分析，哪项是不正确的？", o: ["自动驾驶系统属于部分可观察环境。", "在行驶过程中属于片段式环境。", "道路上的其他人类驾驶员多属于多智能体环境。", "由于车辆轮胎打滑属于随机性环境。"], a: "B", e: "自动驾驶是一个典型的连续、长程衔接的‘延续式/序列式（Sequential）’复杂任务环境。当前的任何变道或刹车动作，都会对未来时间步长内其车辆所处位置及周边其他车辆的交互状态分布造成极其深远的连锁波及影响，绝对非相互断绝、片段式的环境。" },
+      { id: 301, c: "强化学习与智能体", s: "以下关于医疗诊断智能体环境类型的说法哪项是正确的（）", o: ["环境是部分可观察的", "环境下一状态完全取决于智能体行动", "环境随智能体思考发生改变", "是多智能体任务环境"], a: "A", e: "人体内隐生理机能的病灶由于深埋皮肤之下且时刻伴随复杂的生理异质性，AI传感器（如CT、检验化验单）只能捕获局部碎片片面表征，无法百分百摸清生命体底层的全景状态，属于绝对的部分可观察环境。" },
+      { id: 302, c: "强化学习与智能体", s: "关于智能体的分类，以下哪个不属于智能体的基本类型（）", o: ["简单反射型智能体", "基于模型的反射型智能体", "理性智能体", "基于目标的智能体"], a: "C", e: "理性（Rationality）是设计和评测所有大系智能体时统一遵循的最高通用宏观哲学指导原则，而非并列划分出来的某种单一低阶‘具体工程实现智能体类型’。" },
+      { id: 303, c: "强化学习与智能体", s: "对于表驱动的智能体，以下那种说法是不正确的（）", o: ["构建一个表记录所有的感知序列及其最佳行动", "智能体在运行时会根据感知，通过查表方式来决定行动", "一般很容易获取查询表的所有条目", "需要花费大量的时间构建表，甚至无法构建"], a: "C", e: "现实物理客观大世界的特征排列组合规模呈恐怖的组合数爆炸。即便是最基础的文字问答或视觉滑窗，其对应的全历史感知序列查表总空间条目在数学上均是天文数字，‘在工程实践中根本不可能轻松获取和构建完整’。" },
+      { id: 304, c: "强化学习与智能体", s: "以下关于简单反射型智能体说法不正确的是（）", o: ["简单反射型智能体基于状态 - 动作规则进行决策", "需要与环境进行交互", "基于当前的感知选择行动，不涉及目标、效用等信息", "需要基于感知历史进行决策"], a: "D", e: "简单反射型智能体（Simple Reflex Agent）最大的数理缺陷正是其两耳不闻历史：它严格且仅仅盲目盯死当前单一步骤瞬时流入的感知信号，依据写死的IF-THEN规则条件执行短路匹配，‘完全不涵盖、不需要感知历史’。" },
+      { id: 305, c: "强化学习与智能体", s: "以下关于基于目标的智能体说法不正确的是（）", o: ["为了达到目标选择合适的行动", "只考虑一个短期看起来有利的行动并执行", "为达到目标，可能会考虑一个很长的可能行动序列", "会思考如果执行这个行为后，世界会怎样变化"], a: "B", e: "基于目标的智能体（Goal-based Agent）为了顺利达成长远给定的终期战略靶向，必须具备强大的长程搜索、全局前向推演与长路轨迹规划能力，绝对不会只盲目贪婪地去执行一个贪心短视的单步有利动作。" },
+      { id: 306, c: "强化学习与智能体", s: "以下关于基于效用的智能体说法不正确的是（）", o: ["需要与环境交互", "需要更通用的性能度量", "智能体的决策过程中涉及到效用函数的使用", "性能度量的反馈信息比较单一"], a: "D", e: "基于效用的智能体（Utility-based Agent）最大的跨越在于其引入了复杂的效用函数，不仅能判定是否达成目标，更能平滑、多维度加权评估达成该目标付出的资源代价、路线优雅度及安全舒适度，其性能度量反馈极其丰富。" },
+      { id: 307, c: "强化学习与智能体", s: "以下关于学习智能体说法不正确的是（）", o: ["以基本知识开始执行动作，能够通过学习自动行动与适应", "学习元素从评价器获得反馈，这些反馈描述了智能体在固定性能标准方面的表现", "不需要行动的反馈", "需要从环境中学习"], a: "C", e: "学习智能体（Learning Agent）为了能够让自身的决策引擎持续完成更新、纠偏纠错并平滑自适应，其在闭环运行管线中‘无时无刻不需要极其精准且可导地捕获来自真实物理环境对动作做出的高价值反馈反馈信号’。" },
+      { id: 308, c: "机器人学", s: "以下哪一项是机器人的基本组成？", o: ["传感器、处理器、效应器", "显示器、键盘、鼠标", "电池、外壳、轮子", "软件、硬件、网络"], a: "A", e: "一个高度健全、面向具体作业物理环境的智能实体机器人在宏观系统工程架构上必不可少地包含三大底层硬件总线：专门负责感知数据的传感器、负责计算决策的中央处理器、以及最终施加物理功勋和执行动作的效应器/执行器。" },
+      { id: 309, c: "机器人学", s: "下列关于机器人的说法中，正确的是：", o: ["所有机器人都需要人工控制", "机器人只能在工厂中使用", "机器人是一种具备感知、决策和执行能力的智能系统", "机器人不具备自主性"], a: "C", e: "现代先进机器人学将其统一统一定义为一类完全跨越虚拟数字空间与真实物理空间的、有机融汇了‘强有力多维周遭环境环境自感知、高级中央自主逻辑推理判断、以及物理机械执行三大功能模块合一’的高阶闭环智能自动化实体系统。" },
+      { id: 310, c: "机器人学", s: "机器人被称为 “ 智能决策的实体 ” ，是因为它能：", o: ["模拟人类行为", "独立完成所有任务", "具备感知、处理和执行的能力", "完全替代人类"], a: "C", e: "机器人能够摆脱单纯写死的硬编码程序控制、根据外部错综复杂的未知环境干扰自主权衡并输出合理的策略路径，这正是得益于其具备了‘由传感器感知领航、由处理器中继重构决策、最后下传给效应器高效运动’的统一能力要素。" },
+      { id: 311, c: "机器人学", s: "激光雷达属于哪类传感器？", o: ["无源传感器", "温度传感器", "有源传感器", "接触式传感器"], a: "C", e: "激光雷达（LiDAR）在物理学原理上属于典型的有源/主动传感器（Active Sensor）。它无需依赖任何自然界外来的外界环境光，而是由系统自身内部高频向外主动射出特定的密集激光脉冲能量流，通过测算反射回的时间差（ToF）来构建外部物体的三维空间点云地图。" },
+      { id: 312, c: "机器人学", s: "机器人 “ 看见 ” 前方物体，是通过哪个部件完成的？", o: ["机械臂", "传感器", "处理器", "执行器"], a: "B", e: "机器人捕获外界光影、测算障碍物距离等宏观感知层面的动作，在最底层完全依赖于搭载的图像摄像头、超声波、红外探测器或激光雷达等统称的‘环境感知传感器（Sensors）’。" },
+      { id: 313, c: "机器人学", s: "有源传感器与无源传感器的主要区别是：", o: ["有源传感器更容易安装和部署", "有源传感器主动发出信号", "无源传感器使用电池", "无源传感器只能探测金属"], a: "B", e: "传感器大系中划分有源与无源的最本源分水岭在于其探知物理世界时的光学/声学逻辑：有源传感器依靠‘主动对外发射物理高能探测信号流（如激光、无线电波）并捕获回波’；而无源传感器（如红外相机）只能静态、被动截获环境原生的向外辐射能量。" },
+      { id: 314, c: "机器人学", s: "机器人进行逻辑推理和决策主要依靠哪个部件？", o: ["传感器", "摄像头", "处理器", "电源"], a: "C", e: "机器人内部搭载的操作系统（如ROS）、高级深度神经网络权重计算、以及决策控制树程序，其所有数学底座层面的多维矩阵乘加运算和逻辑指令跳转，完全100%全权托管运行在机器人内部承载的‘中央处理器/计算主板（Processor / CPU / GPU）’上。" },
+      { id: 315, c: "机器人学", s: "下列哪个选项可以作为机器人的 “ 眼睛 ” ：", o: ["电源", "红外传感器", "激光切割装置", "电机"], a: "B", e: "红外传感器（以及光学工业相机、双目立体摄像头等）可以通过高效捕获并成像外界红外光谱流信息来为中央的大脑提供图像级参考，相当于为机器人安插了看穿现实环境迷雾的‘机械视觉双眼’。" },
+      { id: 316, c: "机器人学", s: "机器人进行自我判断并选择行为的能力来自于：", o: ["数据库", "决策程序", "执行机构", "能源系统"], a: "B", e: "机器人能够做到在面对突发突发障碍物时自动绕行或急停、完成复杂工件码垛，其核心本领完全来自于内部固化部署的、集成了现代路径规划与自适应鲁棒控制理论的‘核心决策控制程序算法’。" },
+      { id: 317, c: "机器人学", s: "机器人将感知信息转为行动指令的是：", o: ["电源系统", "通信模块", "处理器", "液压机构"], a: "C", e: "中央嵌入式芯片处理器作为机器人的核心数字枢纽，一手全面接管读取各级硬件传感器送来的高维杂乱原始电信号特征数据，一手运行高级感知算法并将其高效实时翻译变换为控制关节电机运转输出偏角的具体‘底层动作驱动伺服指令’。" },
+      { id: 318, c: "机器人学", s: "有源传感器最大的优势是：", o: ["造价低", "主动感知并构建环境模型", "可以完全替代人类视觉", "不依赖电源"], a: "B", e: "有源传感器（如毫米波雷达、LiDAR）由于具备独立向外投射特定探测频段信号的能力，使其能够彻底摆脱受限于外界太阳光照明、反光等客观光热天气干扰带来的感知失效，从而可以完全做到“全天候自主、主动地对周围高维物理现实进行高精度的深度三维环境建模”。" },
+      { id: 319, c: "机器人学", s: "以下关于机器人自主性的描述，正确的是：", o: ["工业机械臂完全不能适应环境变化", "扫地机器人能根据房间布局自主规划路径", "火星车需要人工操作每一个动作", "手术机器人不依赖任何预设程序"], a: "B", e: "现代智能家用扫地机器人是其具备低级自主性（Autonomy）的工业普及范例：它能完全依赖搭载的LiDAR或视觉SLAM算法，在全新未知的异构家庭户型内一边行走一边测绘，并自主规划出覆盖率最高且防卡阻跌落的最优全局清洁路径路径。" },
+      { id: 320, c: "机器人学", s: "机器人系统中，三大核心模块的协作流程正确顺序是：", o: ["效应器  →  传感器  →  处理器", "处理器  →  传感器  →  效应器", "传感器  →  处理器  →  效应器", "电源  →  执行器  →  显示器"], a: "C", e: "一个标准机器人的实时闭环控制信息流水流向完全不可逆且严格契合如下经典控制论回路：“首先由最外层的传感器高频截获物理世界的原始信号数据，接着将其上传至处理器执行高级特征对齐与决策规划算法计算，最后由处理器把生成的控制信号下传传导给最末端的效应器关节去精确输出物理层面的物理机械做功动作”。" },
+      { id: 321, c: "AI安全与治理", s: "以下哪项不属于人工智能自身的内生风险？", o: ["自动驾驶系统错误决策导致事故", "医疗  AI  因数据保护不力泄露隐私", "生成模型伪造虚假新闻误导公众", "模型推理过程不透明难以信任"], a: "C", e: "生成模型伪造虚假新闻属于外部恶意滥用导致的衍生风险，而非系统设计或技术缺陷产生的原生内生风险。" },
+      { id: 322, c: "AI安全与治理", s: "AI  安全研究的核心目标之一是提升模型的 ______ ，即模型在噪声、干扰 或恶意攻击下仍能保持稳定输出的能力。", o: ["透明性", "鲁棒性", "公平性", "可解释性"], a: "B", e: "鲁棒性是指系统在面临噪声、对抗攻击或长尾干扰下，仍能保持正确稳定输出的稳健性能。" },
+      { id: 323, c: "AI安全与治理", s: "以下哪项属于  AI  伦理治理中 “ 透明性 ” 原则的具体要求？", o: ["确保模型训练数据来源合法", "保证用户不滥用  AI", "向用户说明  AI  决策逻辑与依据", "限制模型的使用场景"], a: "C", e: "透明性原则要求向用户明示并合理解释算法系统的内在决策逻辑、运行机制与判别依据。" },
+      { id: 324, c: "AI安全与治理", s: "为防范数据泄露风险， AI  开发中应优先采取的措施是 ______ 。", o: ["清洗训练数据中的有害内容", "使用差分隐私技术", "提高训练数据规模", "部署模型压缩工具"], a: "B", e: "差分隐私通过引入精密可控的数理噪声提供严密的隐私保护，能有效防止模型在交互或重训中泄露敏感训练数据。" },
+      { id: 325, c: "AI安全与治理", s: "在  AI  安全伦理风险防范技术中，通过调整训练过程使模型对输入扰动更 鲁棒的方法是 ______ 。", o: ["数据增广", "对抗训练", "数据生成", "价值对齐"], a: "B", e: "对抗训练通过在训练循环中主动注入特定对抗扰动样本进行重训，从而直接提升和固化模型的抗干扰边界。" },
+      { id: 326, c: "AI安全与治理", s: "以下哪项不属于  AI  伦理指导原则中的关键要求？", o: ["透明性", "数据生成", "隐私保护", "公平性"], a: "B", e: "数据生成属于具体的技术或工程操作手段，而透明性、隐私保护和公平性才是AI伦理的核心指导原则。" },
+      { id: 327, c: "AI安全与治理", s: "AI  技术对社会就业的冲击属于以下哪种风险？", o: ["内生风险", "衍生风险", "技术漏洞", "数据偏见"], a: "B", e: "技术颠覆带来的劳动力替代属于AI大规模部署并融入社会经济系统后引发的次生社会影响，定义为衍生风险。" },
+      { id: 328, c: "AI安全与治理", s: "以下哪项属于  AI  系统的内生风险？", o: ["生成虚假新闻误导公众", "模型决策过程不可解释", "技术滥用导致劳资矛盾", "自动化取代传统岗位"], a: "B", e: "模型不可解释性（黑箱效应）是由深层网络高维非线性复合结构天然带来的技术瓶颈，属于典型的原生内生风险。" },
+      { id: 329, c: "AI安全与治理", s: "公平性风险的主要产生原因不包括以下哪一项？", o: ["训练数据中的历史偏见", "模型优化目标忽略公平性约束", "训练过程中缺乏偏见检测算法", "模型无法理解用户指令"], a: "D", e: "模型无法理解用户指令属于大模型能力基准问题，而历史数据偏见和缺乏模型公平约束才是导致算法歧视的根源。" },
+      { id: 330, c: "AI安全与治理", s: "有害性风险仅涉及生成暴力、色情等恶意内容，不包括伦理问题。这句 话是否正确？", o: ["正确", "错误"], a: "B", e: "有害性风险外延广泛，除了暴力和色情，还深刻包含价值观扭曲、教唆违法、诱导自残等深层伦理道德危机。" },
+      { id: 331, c: "AI安全与治理", s: "人工智能模型在微调后丢失原有知识的现象称为 ______ 。", o: ["数据偏差", "灾难性遗忘", "过拟合", "训练不稳定"], a: "B", e: "灾难性遗忘指神经网络在学习新任务（如增量微调）时，新权重的覆写导致先前存储的通用泛化知识发生严重丢失。" },
+      { id: 332, c: "AI安全与治理", s: "以下哪项属于可靠性风险的典型表现？", o: ["生成种族歧视言论", "输出与输入指令无关的内容", "导致就业市场失衡", "教唆用户自残"], a: "B", e: "模型输出内容与输入指令完全脱节或输出胡乱乱码，反映出系统失去了基本的尽职期望与稳定性，属于可靠性风险。" },
+      { id: 333, c: "AI安全与治理", s: "人工智能滥用导致的学术造假和就业市场失衡属于衍生风险问题。这句 话是否正确？", o: ["正确", "错误"], a: "A", e: "学术造假与就业结构失衡并非算法或硬件原生自带的技术故障，而是技术作为乘数投放至人类社会后派生出的衍生风险。" },
+      { id: 334, c: "AI安全与治理", s: "训练数据中包含未清洗的暴力内容，可能导致模型输出 ______ 风险。", o: ["公平性", "可靠性", "有害性", "安全性"], a: "C", e: "模型通过最大似然估计学习未经清洗的暴力语料，极易在输出端复现并放大这些有害、反社会的内容。" },
+      { id: 335, c: "AI安全与治理", s: "以下哪项是模型优化目标忽略公平性约束的直接后果？", o: ["提高模型推理速度", "加剧对特定群体的系统性偏见", "减少训练数据需求量", "增强模型泛化能力"], a: "B", e: "损失函数若单纯追求全局综合准确率最大化，极易以牺牲边缘少数样本的精度为代价，从而加剧系统性的算法歧视。" },
+      { id: 336, c: "AI安全与治理", s: "面部识别系统对非洲裔女性错误率较高，主要反映了 ______ 风险。", o: ["可靠性", "有害性", "公平性", "安全性"], a: "C", e: "训练数据中特定族裔样本缺失或不均衡，导致模型决策边界产生系统性不公，属于典型的公平性风险。" },
+      { id: 337, c: "AI安全与治理", s: "模型鲁棒性差最可能表现为以下哪种情况？", o: ["在对抗样本攻击下输出错误结果", "训练时需要大量计算资源", "用户界面设计不友好", "模型文件体积过大"], a: "A", e: "对抗样本攻击通过在输入中添加肉眼不可察的特定扰动来误导模型，是检验模型鲁棒性脆弱最直接的手段。" },
+      { id: 338, c: "AI安全与治理", s: "通过黑盒访问接口复制目标模型参数信息的攻击方式属于 ______ 。", o: ["成员推断攻击", "对抗样本攻击", "模型反演攻击", "模型窃取攻击"], a: "D", e: "模型窃取攻击指攻击者无需接触原始模型参数物理文件，仅依靠大量黑盒查询API和预测响应在本地克隆平替模型。" },
+      { id: 339, c: "AI安全与治理", s: "模型做出判断时高度依赖复杂的参数与非线性映射，使得其推理过程难 以追溯，这种 “________” 现象妨碍了可解释性。", o: ["信息冗余", "黑箱效应", "神经激活偏差", "局部最优陷阱"], a: "B", e: "深度学习模型由于具有海量参数与复杂的非线性映射，使内部具体因果路径极其黑盒化、难以逆向追踪，即黑箱效应。" },
+      { id: 340, c: "AI安全与治理", s: "（多选题）以下哪些情形属于对人工智能模型鲁棒性构成威胁？", o: ["模型在普通用户指令下生成有害回复", "模型难以识别对抗补丁遮挡的人体", "模型在不同设备间运行速度不一致", "模型对训练外情境无法做出正确反应"], a: "B, D", e: "对抗补丁攻击和超出训练集分布的长尾（OOD）极端情境，都会造成系统预测失控，是对模型鲁棒性的核心威胁。" },
+      { id: 341, c: "AI安全与治理", s: "可解释性风险不会导致模型输出错误结果，因此可以在高风险领域中忽 略。", o: ["正确", "错误"], a: "B", e: "高风险领域（如医疗、司法）要求系统决策必须可审计、责任可追溯，缺乏可解释性的黑箱模型无法建立临床或法律信任。" },
+      { id: 342, c: "AI安全与治理", s: "为什么说 “ 长尾风险 ” 是鲁棒性问题的一种表现？", o: ["开因为模型未能对训练集中大量出现的样本进行强化学习", "因为模型在尾部少数情境下缺乏足够的训练经验", "因为模型对数据中随机噪声过于敏感"], a: "B", e: "长尾情境处于模型正常训练集统计分布的边缘或之外，缺乏训练经验极易导致预测崩溃，属于分布鲁棒性缺陷。" },
+      { id: 343, c: "AI安全与治理", s: "下列哪项攻击方式能在不知模型细节的前提下，通过接口构造出一个高 度相似的模型？", o: ["模型蒸馏攻击", "模型反演攻击", "模型窃取攻击", "成员推断攻击"], a: "C", e: "利用纯黑盒查询API采集目标模型的预测概率软标签，从而反向训练影子克隆模型的攻击方式称为模型窃取攻击。" },
+      { id: 344, c: "AI安全与治理", s: "隐私性风险可能在训练、部署和使用各阶段发生，尤其当训练数据未经 ________ 处理时更易泄露敏感信息。", o: ["多轮标注", "模型蒸馏", "匿名化", "统一格式"], a: "C", e: "对原始语料进行严格的匿名化和去标识化清洗，能从源头阻断敏感隐私信息被神经网络权重硬性死记。" },
+      { id: 345, c: "AI安全与治理", s: "基于数据的  AI  风险防范技术不包括以下哪一项？", o: ["数据筛选与清洗", "对抗训练", "数据生成", "数据增广"], a: "B", e: "对抗训练是通过注入对抗损失、在优化过程中直接微调网络内部权重参数边界的技术，属于模型/策略层防护而非纯数据层技术。" },
+      { id: 346, c: "AI安全与治理", s: "以下哪项技术通过多个  AI  智能体协作提升推理准确性？", o: ["模型自推理改进", "多智能体推理", "推理过程干预", "数据增广"], a: "B", e: "多智能体推理架构驱动多个分工不同的Agent在框架内进行多轮辩论与交叉验证，利用群体博弈降低事实幻觉。" },
+      { id: 347, c: "AI安全与治理", s: "数据清洗技术通过人工生成新样本解决数据稀缺问题，尤其在医疗领域 应用广泛。", o: ["正确", "错误"], a: "B", e: "数据清洗的作用是去噪和剔除脏样本（做减法）；针对医疗等数据稀缺领域人工生成新样本的技术属于数据增广或合成数据生成（做加法）。" },
+      { id: 348, c: "AI安全与治理", s: "检索增强生成技术依赖模型自身参数，不引入外部知识库。", o: ["正确", "错误"], a: "B", e: "检索增强生成（RAG）核心逻辑正是通过在推理阶段外挂检索权威外部知识库，动态为大模型提供实时事实的论据约束。" },
+      { id: 349, c: "AI安全与治理", s: "基于数据的  AI  风险防范技术中，以下哪项是提高已有数据质量的关键方 式？", o: ["数据生成", "数据增广", "数据筛选与清洗", "对抗训练"], a: "C", e: "在面对存量数据集时，通过严密的数据筛选以及去噪、去重等清洗工程，是提高数据纯净度与特征质量最直接有效的方式。" },
+      { id: 350, c: "AI安全与治理", s: "（多选题）数据清洗的核心目标包括：", o: ["删除重复数据", "修正标注错误", "降低数据存储成本", "去除异常数值"], a: "A, B, D", e: "数据清洗在工程管线中核心负责剔除冗余重复数据（A）、修正标注偏差（B）以及平滑过滤随机异常死噪点（D）。" },
+      { id: 351, c: "AI安全与治理", s: "（多选题）以下哪些属于基于训练策略的  AI  风险防范技术？", o: ["指令微调", "检索增强生成", "对抗训练", "多智能体推理"], a: "A, C", e: "指令微调（SFT）与对抗训练的防护动作都直接介入并重塑模型的参数权重矩阵更新过程，属于纯正的训练策略层加固。" },
+      { id: 352, c: "AI安全与治理", s: "以下哪种风险防范技术能够实现模型的自我调节？", o: ["数据清洗", "检索增强生成", "多智能体推理", "模型自推理改进"], a: "D", e: "模型自推理改进（如Self-Correction）通过在Prompt中构建内省回路，依靠单模型自身的反思执行输出结果的自检与修正。" },
+      { id: 353, c: "AI安全与治理", s: "构建更完善的风险防范理论体系的核心任务不包括以下哪项？", o: ["制定统一的  AI  价值体系", "提升模型训练速度", "分析安全防范的局限与制衡", "发展系统化的安全优化理论"], a: "B", e: "提升模型训练速度和硬件吞吐属于底层的并行异构计算优化和系统级工程任务，不属于安全伦理与控制理论防范的核心范畴。" },
+      { id: 354, c: "AI安全与治理", s: "从更完善的风险防范理论体系角度看，除了下列哪项外，都是需要采取 的措施？", o: ["制定合理且统一的  AI  价值体系", "发展更系统的安全优化理论", "增加  AI  系统的计算能力", "分析安全风险防范的局限与制衡"], a: "C", e: "野蛮增加系统的物理底层大算力属于单纯的硬件扩张，不属于完善安全防御与对齐理论治理体系中所需的学术和规制措施。" },
+      { id: 355, c: "AI安全与治理", s: "超级对齐研究的目的是解决未来超级智能体可能超出人类控制的问题。 这句话是否正确？", o: ["正确", "错误"], a: "A", e: "超级对齐致力于攻克当AI心智等级全盘凌驾于人类总和之上时，如何在算法和控制层确保系统绝对安全可控并符合人类根本福祉的科学难题。" },
+      { id: 356, c: "AI安全与治理", s: "分析安全风险防范的 “ 局限与制衡 ” 时，需考虑 ______ 层面的因素。", o: ["仅技术", "技术、伦理、法律", "仅硬件性能", "仅数据规模"], a: "B", e: "审视AI防御体系的局限与制衡时，技术指标折损、多地缘文化道德冲突以及多国法律合规责任是互为拉扯的三维核心要素。" },
+      { id: 357, c: "AI安全与治理", s: "下列哪项不是建立更全面的多维度风险评测基准的作用？", o: ["掌握模型风险防范程度", "发现模型风险的具体问题", "解决模型推理速度不快的问题", "进行公平性、有害性等性能的横向比较"], a: "C", e: "安全多维评测基准主要提供量化的风险度量与对齐审计，无法解决或干预模型前向传播计算在设备侧的物理推理延迟。" },
+      { id: 358, c: "AI安全与治理", s: "下列哪项不属于更有效的风险防范治理应集中解决的问题？", o: ["AI  应用引发的社会与伦理问题", "提升  AI  系统的计算能力", "减轻  AI  对人类就业的负面影响", "制定全面的治理战略"], a: "B", e: "提升计算能力属于纯产业生产力和微电子硬件层面的扩充，并不属于人文及系统级伦理安全防范治理所集中规制的公共政策范畴。" },
+      { id: 359, c: "AI安全与治理", s: "要打造有效的  AI  风险防范治理，需要哪些方面的协同合作？", o: ["政策制定者", "企业领导者", "研究人员", "以上都是"], a: "D", e: "落地全方位AI合规治理防线需要立法政策出台红线、企业在商业端贯彻风险把控、以及科研人员从算法底层提供对齐技术支持。" },
+      { id: 360, c: "AI安全与治理", s: "AI  风险防范治理的关键目标是？", o: ["优先保证模型计算效率", "平衡技术创新与道德部署", "减少模型参数量以降低成本", "扩大  AI  在军事领域的应用"], a: "B", e: "人工智能风险防范治理的核心靶向，在于最大化寻找既能全面释放新质生产力的“技术创新”与确保人权法治道德红线的“道德部署”之间的动态平衡中轴线。" }
+    ];
+
+    // Array mapping option letters to indices
+    const OPTION_KEYS = ["A", "B", "C", "D"];
+
+    // Default State Configuration Object
+    let progress = {
+      answers: {}, // { questionId: selectedKey }
+      historyPath: [], // Array representing random path timeline
+      currentPathIndex: -1, // Current focused index inside historyPath
+      studySeconds: 0
+    };
+
+    let activeTab = "quiz"; // "quiz" | "mistakes"
+
+    // Initialize Progress from LocalStorage optionally
+    function initAppState() {
+      try {
+        const saved = localStorage.getItem("ai_quiz_standalone_v1");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && typeof parsed === "object") {
+            progress.answers = parsed.answers || {};
+            progress.historyPath = parsed.historyPath || [];
+            progress.currentPathIndex = typeof parsed.currentPathIndex === 'number' ? parsed.currentPathIndex : -1;
+            progress.studySeconds = parsed.studySeconds || 0;
+          }
+        }
+      } catch (e) {
+        console.error("Failed parsing localStorage, resetting", e);
+      }
+
+      // Initialize with a random starting question if path is empty
+      if (!progress.historyPath || progress.historyPath.length === 0) {
+        const initialId = QUESTIONS_DATA[Math.floor(Math.random() * QUESTIONS_DATA.length)].id;
+        progress.historyPath = [initialId];
+        progress.currentPathIndex = 0;
+      }
+
+      // Setup Timer Interrupt
+      setInterval(() => {
+        progress.studySeconds += 1;
+        saveToLocalStorage();
+        updateStatsUI();
+      }, 1000);
+
+      // Immediate Initial Render
+      renderActiveView();
+    }
+
+    function saveToLocalStorage() {
+      localStorage.setItem("ai_quiz_standalone_v1", JSON.stringify(progress));
+    }
+
+    // Format time elapsed
+    function formatDuration(totalSeconds) {
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      let out = "";
+      if (hours > 0) out += hours + "时";
+      out += (minutes > 0 ? minutes : "0") + "分";
+      out += seconds + "秒";
+      return out;
+    }
+
+    // Compile Statistics from active responses
+    function calculateStats() {
+      const answeredIds = Object.keys(progress.answers).map(Number);
+      const total = QUESTIONS_DATA.length;
+      let correct = 0;
+
+      answeredIds.forEach(id => {
+        const q = QUESTIONS_DATA.find(item => item.id === id);
+        if (q && progress.answers[id] === q.a) {
+          correct++;
+        }
+      });
+
+      const accuracy = answeredIds.length > 0 ? Math.round((correct / answeredIds.length) * 100) : 0;
+
+      // Mistakes are answers that have been logged but are incorrect
+      const mistakesList = QUESTIONS_DATA.filter(q => {
+        const uAns = progress.answers[q.id];
+        return uAns !== undefined && uAns !== q.a;
+      });
+
+      return {
+        totalAnswered: answeredIds.length,
+        correctCount: correct,
+        accuracyRate: accuracy,
+        mistakesCount: mistakesList.length,
+        mistakes: mistakesList
+      };
+    }
+
+    // Update Top Status Stats Panel Indicators
+    function updateStatsUI() {
+      const stats = calculateStats();
+
+      document.getElementById("stats-timer").innerText = formatDuration(progress.studySeconds);
+      document.getElementById("stats-accuracy").innerText = stats.accuracyRate + "%";
+      document.getElementById("stats-progress").innerText = stats.totalAnswered + " / " + QUESTIONS_DATA.length + " 题";
+      document.getElementById("stats-mistakes").innerText = stats.mistakesCount + " 题";
+
+      // Badges updates
+      const badge = document.getElementById("mistake-badge");
+      if (stats.mistakesCount > 0) {
+        badge.innerText = stats.mistakesCount;
+        badge.classList.remove("hidden");
+      } else {
+        badge.classList.add("hidden");
+      }
+    }
+
+    // Dynamic Option Selector Selection handler
+    function handleSelectOption(optKey, questionId) {
+      // Prevent double selections / changing logged answers
+      if (progress.answers[questionId] !== undefined) return;
+
+      progress.answers[questionId] = optKey;
+      saveToLocalStorage();
+      updateStatsUI();
+
+      // Re-render only options and explanation
+      renderQuestionBody();
+    }
+
+    // Smart helper to select next random target (preferring unanswered questions)
+    function extractNextRandomQuestionId(currentId) {
+      const answeredIds = Object.keys(progress.answers).map(Number);
+      const allIds = QUESTIONS_DATA.map(q => q.id);
+      const unansweredIds = allIds.filter(id => !answeredIds.includes(id));
+
+      const candidatePool = unansweredIds.length > 0 ? unansweredIds : allIds;
+      // Filter out current ID to avoid immediately showing the same question twice
+      let filteredPool = candidatePool.filter(id => id !== currentId);
+      if (filteredPool.length === 0) {
+        filteredPool = allIds;
+      }
+
+      const randomIndex = Math.floor(Math.random() * filteredPool.length);
+      return filteredPool[randomIndex];
+    }
+
+    // Trigger standard jump to a specific static question index
+    function jumpToQuestionId(id) {
+      const qExists = QUESTIONS_DATA.some(q => q.id === id);
+      if (!qExists) return;
+
+      const existingPathIndex = progress.historyPath.indexOf(id);
+      if (existingPathIndex !== -1) {
+        progress.currentPathIndex = existingPathIndex;
+      } else {
+        progress.historyPath.splice(progress.currentPathIndex + 1);
+        progress.historyPath.push(id);
+        progress.currentPathIndex = progress.historyPath.length - 1;
+      }
+
+      saveToLocalStorage();
+      switchTab("quiz");
+    }
+
+    // Quick jump form submissions handlers
+    function handleJumpSubmit() {
+      const inputNum = parseInt(document.getElementById("jump-input").value, 10);
+      const qExists = QUESTIONS_DATA.some(q => q.id === inputNum);
+      if (!isNaN(inputNum) && qExists) {
+        jumpToQuestionId(inputNum);
+        document.getElementById("jump-input").value = "";
+      } else {
+        alert("请输入存在的有效题号进行跳转。");
+      }
+    }
+
+    function handleMobileJumpSubmit() {
+      const inputNum = parseInt(document.getElementById("jump-input-mobile").value, 10);
+      const qExists = QUESTIONS_DATA.some(q => q.id === inputNum);
+      if (!isNaN(inputNum) && qExists) {
+        jumpToQuestionId(inputNum);
+        document.getElementById("jump-input-mobile").value = "";
+      } else {
+        alert("请输入存在的有效题号进行跳转。");
+      }
+    }
+
+    // Next Question handler
+    function handleNextQuestion() {
+      const currentId = progress.historyPath[progress.currentPathIndex];
+
+      // Check if we are moving forward into an ALREADY traced history path
+      if (progress.currentPathIndex < progress.historyPath.length - 1) {
+        progress.currentPathIndex += 1;
+      } else {
+        // Choose a new random question
+        const nextId = extractNextRandomQuestionId(currentId);
+        progress.historyPath.push(nextId);
+        progress.currentPathIndex = progress.historyPath.length - 1;
+      }
+
+      saveToLocalStorage();
+      updateStatsUI();
+      renderQuestionBody();
+    }
+
+    // Previous Question handler (safely step back inside our own history path)
+    function handlePrevQuestion() {
+      if (progress.currentPathIndex > 0) {
+        progress.currentPathIndex -= 1;
+        saveToLocalStorage();
+        updateStatsUI();
+        renderQuestionBody();
+      }
+    }
+
+    // Fast manual trigger box "随机换一题" button click
+    function generateNewRandomJump() {
+      const currentId = progress.historyPath[progress.currentPathIndex];
+      const nextId = extractNextRandomQuestionId(currentId);
+
+      // Erase downstream history from current position, appending new jump
+      progress.historyPath.splice(progress.currentPathIndex + 1);
+      progress.historyPath.push(nextId);
+      progress.currentPathIndex = progress.historyPath.length - 1;
+
+      saveToLocalStorage();
+      updateStatsUI();
+      renderQuestionBody();
+    }
+
+    // Switch active Navigation Desk tab
+    function switchTab(target) {
+      activeTab = target;
+
+      // Adjust visual tab buttons classes
+      const btnQuiz = document.getElementById("tab-btn-quiz");
+      const btnMistakes = document.getElementById("tab-btn-mistakes");
+      const quizView = document.getElementById("quiz-view");
+      const mistakesView = document.getElementById("mistakes-view");
+
+      if (activeTab === "quiz") {
+        btnQuiz.className = "flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all bg-indigo-600 text-white shadow-sm cursor-pointer";
+        btnMistakes.className = "flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all text-[#475569] hover:bg-slate-50 hover:text-[#0F172A] relative cursor-pointer";
+
+        quizView.classList.remove("hidden");
+        mistakesView.classList.add("hidden");
+        renderQuestionBody();
+      } else {
+        btnQuiz.className = "flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all text-[#475569] hover:bg-slate-50 hover:text-[#0F172A] cursor-pointer";
+        btnMistakes.className = "flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all bg-indigo-600 text-white shadow-sm relative cursor-pointer";
+
+        quizView.classList.add("hidden");
+        mistakesView.classList.remove("hidden");
+        renderMistakesList();
+      }
+      updateStatsUI();
+    }
+
+    // Reset entire State with nice clear confirmation dialogues
+    function handleResetProgress() {
+      if (confirm("您确定要清空当前的全部答题战绩、错题记录以及累计用时，重新开始随机刷题吗？")) {
+        const initialId = QUESTIONS_DATA[Math.floor(Math.random() * QUESTIONS_DATA.length)].id;
+        progress = {
+          answers: {},
+          historyPath: [initialId],
+          currentPathIndex: 0,
+          studySeconds: 0
+        };
+        saveToLocalStorage();
+        switchTab("quiz");
+      }
+    }
+
+    // Compile and render the Active question panel
+    function renderQuestionBody() {
+      const currentId = progress.historyPath[progress.currentPathIndex];
+      const qObj = QUESTIONS_DATA.find(q => q.id === currentId) || QUESTIONS_DATA[0];
+
+      // Populate Category and Path indices info
+      document.getElementById("question-category").innerText = qObj.c;
+      document.getElementById("question-path-info").innerText = `当前随机路径: 第 ${progress.currentPathIndex + 1} 题 / 题号 No.${qObj.id}`;
+
+      // Stems populators
+      document.getElementById("question-num-prefix").innerText = `No.${qObj.id}`;
+      document.getElementById("question-stem").innerText = qObj.s;
+
+      // Fetch user logged choice for this question
+      const userChoice = progress.answers[qObj.id];
+      const feedbackContainer = document.getElementById("options-block");
+      feedbackContainer.innerHTML = "";
+
+      // Build Option Button structure
+      qObj.o.forEach((optText, index) => {
+        const optKey = OPTION_KEYS[index];
+        const isSelected = userChoice === optKey;
+        const isCorrect = optKey === qObj.a;
+        const hasAnswered = userChoice !== undefined;
+
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.onclick = () => handleSelectOption(optKey, qObj.id);
+
+        let styleClasses = "min-h-[50px] w-full text-left px-5 py-3.5 rounded-2xl border-2 transition-all flex items-center justify-between gap-4 cursor-pointer text-sm md:text-base ";
+
+        if (hasAnswered) {
+          if (isCorrect) {
+            styleClasses += "border-green-300 bg-green-50 text-green-900 shadow-sm";
+          } else if (isSelected) {
+            styleClasses += "border-rose-300 bg-rose-50 text-rose-900 shadow-sm";
+          } else {
+            styleClasses += "border-slate-100 bg-white opacity-50 text-slate-400";
+          }
+        } else {
+          styleClasses += "border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 text-slate-700";
+        }
+
+        // Left elements
+        const innerLeft = document.createElement("div");
+        innerLeft.className = "flex items-center gap-3 flex-1";
+
+        const keyBadge = document.createElement("span");
+        let badgeClass = "w-7 h-7 shrink-0 flex items-center justify-center rounded-lg font-bold text-xs font-mono transition-all ";
+
+        if (isSelected) {
+          badgeClass += "bg-indigo-600 text-white";
+        } else if (hasAnswered && isCorrect) {
+          badgeClass += "bg-green-600 text-white";
+        } else {
+          badgeClass += "bg-slate-100 text-slate-600";
+        }
+
+        keyBadge.className = badgeClass;
+        keyBadge.innerText = optKey;
+
+        const textSpan = document.createElement("span");
+        textSpan.className = "flex-1";
+        textSpan.innerText = optText;
+
+        innerLeft.appendChild(keyBadge);
+        innerLeft.appendChild(textSpan);
+        btn.appendChild(innerLeft);
+
+        // Right scoring symbols
+        if (hasAnswered) {
+          const innerRight = document.createElement("div");
+          if (isCorrect) {
+            innerRight.innerHTML = `
+                <svg class="w-5 h-5 text-green-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              `;
+          } else if (isSelected) {
+            innerRight.innerHTML = `
+                <svg class="w-5 h-5 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              `;
+          }
+          btn.appendChild(innerRight);
+        }
+
+        feedbackContainer.appendChild(btn);
+      });
+
+      // Set Navigation Prev Button Disable Policy
+      document.getElementById("prev-btn").disabled = progress.currentPathIndex <= 0;
+
+      // Re-align Explanation Container Panel
+      const explainPanel = document.getElementById("explanation-panel");
+      if (userChoice !== undefined) {
+        explainPanel.classList.remove("hidden");
+        const isUserCorrect = userChoice === qObj.a;
+        const badgeEl = document.getElementById("grading-badge");
+
+        if (isUserCorrect) {
+          badgeEl.className = "flex items-center gap-1 text-green-700 bg-green-100 px-2.5 py-1 rounded-lg";
+          badgeEl.innerHTML = `
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+              </svg>
+              <span>回答正确</span>
+            `;
+        } else {
+          badgeEl.className = "flex items-center gap-1 text-rose-700 bg-rose-100 px-2.5 py-1 rounded-lg";
+          badgeEl.innerHTML = `
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span>回答错误</span>
+            `;
+        }
+
+        document.getElementById("user-selected-opt").innerText = userChoice;
+        document.getElementById("correct-answer-badge").innerText = qObj.a;
+        document.getElementById("explanation-text").innerText = qObj.e;
+      } else {
+        explainPanel.classList.add("hidden");
+      }
+    }
+
+    // Compile and render the Mistakes list notebook page
+    function renderMistakesList() {
+      const stats = calculateStats();
+      document.getElementById("mistakes-count-badge").innerText = stats.mistakesCount;
+
+      const clearBtn = document.getElementById("clear-mistakes-btn");
+      if (stats.mistakesCount > 0) {
+        clearBtn.classList.remove("hidden");
+      } else {
+        clearBtn.classList.add("hidden");
+      }
+
+      const container = document.getElementById("mistakes-list-container");
+      container.innerHTML = "";
+
+      if (stats.mistakesCount === 0) {
+        container.innerHTML = `
+            <div class="py-16 text-center text-[#94A3B8]">
+              <!-- Happy Correct Sparkle SVG -->
+              <svg class="mx-auto mb-4 w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p class="text-sm font-semibold text-green-900">太棒了，目前没有任何错题记录！</p>
+              <p class="text-xs mt-1.5 text-slate-400">在随机答题模式下多多测试，确保知识点完全吃透巩固。</p>
+              <button
+                onclick="switchTab('quiz')"
+                class="mt-4 px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
+              >
+                开始答题
+              </button>
+            </div>
+          `;
+        return;
+      }
+
+      // Output all item cards sequential loop
+      stats.mistakes.forEach(item => {
+        const userChoice = progress.answers[item.id] || "无";
+        const card = document.createElement("div");
+        card.className = "p-4 sm:p-5 bg-rose-50/20 border border-rose-100 rounded-2xl flex flex-col justify-between gap-3 fade-in";
+
+        card.innerHTML = `
+            <div>
+              <div class="flex flex-wrap items-center gap-2 mb-2">
+                <span class="px-2 py-0.5 bg-rose-100 text-rose-800 font-mono text-[10px] font-bold rounded-md">
+                  题号 No.${item.id}
+                </span>
+                <span class="text-[10px] bg-slate-200 text-[#475569] px-2 py-0.5 rounded-full font-sans">
+                  ${item.c}
+                </span>
+                
+                <span class="ml-auto text-xs font-mono text-rose-700">
+                  你的选择: <strong class="font-bold">${userChoice}</strong>
+                </span>
+                <span class="text-xs font-mono text-green-700 pl-2 border-l border-rose-200">
+                  正确答案: <strong class="font-bold">${item.a}</strong>
+                </span>
+              </div>
+
+              <h4 class="text-sm font-bold text-slate-900 leading-relaxed mb-3">
+                ${item.s}
+              </h4>
+
+              <div class="bg-white p-3.5 rounded-xl border border-rose-100/40 text-xs text-[#475569] leading-relaxed">
+                <strong class="text-[#1E293B] block mb-1">权威解析：</strong>
+                ${item.e}
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-2 border-t border-rose-100/50">
+              <span class="text-[10px] text-[#64748B] italic">
+                智能答题系统 · 360道必刷题
+              </span>
+              
+              <button
+                onclick="retryQuestionInQuiz(${item.id})"
+                class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition-all cursor-pointer"
+              >
+                跳回重做
+              </button>
+            </div>
+          `;
+        container.appendChild(card);
+      });
+    }
+
+    // Jump to a specific mistake item, clear previous logged choice to allow retry
+    function retryQuestionInQuiz(id) {
+      delete progress.answers[id];
+      saveToLocalStorage();
+      jumpToQuestionId(id);
+    }
+
+    // Direct clean sweep for all mistakes list
+    function clearAllMistakes() {
+      if (confirm("该操作将清除您目前记录下的所有错题重做数据（但已答对的正确题型进度会继续保留）。确定要继续吗？")) {
+        const stats = calculateStats();
+        stats.mistakes.forEach(item => {
+          delete progress.answers[item.id];
+        });
+        saveToLocalStorage();
+        switchTab("quiz");
+      }
+    }
+
+    // Fuzzy search across all 360 questions (by id, stem, category, explanation, or options)
+    function handleFuzzySearch(query, containerId) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+
+      const cleanQuery = query.trim().toLowerCase();
+      if (!cleanQuery) {
+        container.classList.add("hidden");
+        container.innerHTML = "";
+        return;
+      }
+
+      const matches = QUESTIONS_DATA.filter(q => {
+        if (q.id.toString() === cleanQuery) return true;
+        if (q.c.toLowerCase().includes(cleanQuery)) return true;
+        if (q.s.toLowerCase().includes(cleanQuery)) return true;
+        if (q.e.toLowerCase().includes(cleanQuery)) return true;
+        if (q.o.some(opt => opt.toLowerCase().includes(cleanQuery))) return true;
+        return false;
+      });
+
+      if (matches.length === 0) {
+        container.classList.remove("hidden");
+        container.innerHTML = `
+            <div class="p-3 text-xs text-slate-400 text-center font-sans">
+              未找到匹配的题目
+            </div>
+          `;
+        return;
+      }
+
+      container.classList.remove("hidden");
+      container.innerHTML = matches.map(q => {
+        const highlightStem = q.s.length > 28 ? q.s.substring(0, 28) + "..." : q.s;
+        return `
+            <div
+              onclick="selectFuzzySearchResult(${q.id}, '${containerId}')"
+              class="p-2.5 hover:bg-slate-50 active:bg-slate-100 cursor-pointer text-left transition-colors text-xs border-b border-slate-100 last:border-0"
+            >
+              <div class="flex items-center justify-between mb-0.5">
+                <span class="font-mono font-bold text-indigo-600">No.${q.id}</span>
+                <span class="text-[9px] bg-indigo-50 text-indigo-700 px-1.5 py-0.2 rounded font-sans font-medium">${q.c}</span>
+              </div>
+              <p class="text-slate-700 font-sans truncate leading-normal" title="${q.s}">${highlightStem}</p>
+            </div>
+          `;
+      }).join("");
+    }
+
+    // Handler when user selects a search outcome
+    function selectFuzzySearchResult(id, containerId) {
+      jumpToQuestionId(id);
+
+      // Hide dropdown
+      const container = document.getElementById(containerId);
+      if (container) {
+        container.classList.add("hidden");
+      }
+
+      // Clear input values
+      const searchInput = document.getElementById("fuzzy-search-input");
+      if (searchInput) searchInput.value = "";
+      const searchInputMobile = document.getElementById("fuzzy-search-input-mobile");
+      if (searchInputMobile) searchInputMobile.value = "";
+    }
+
+    // Close dropdowns when clicking outside
+    document.addEventListener("click", function (event) {
+      const dInput = document.getElementById("fuzzy-search-input");
+      const dContainer = document.getElementById("fuzzy-search-results");
+      const mInput = document.getElementById("fuzzy-search-input-mobile");
+      const mContainer = document.getElementById("fuzzy-search-results-mobile");
+
+      if (dInput && dContainer && !dInput.contains(event.target) && !dContainer.contains(event.target)) {
+        dContainer.classList.add("hidden");
+      }
+      if (mInput && mContainer && !mInput.contains(event.target) && !mContainer.contains(event.target)) {
+        mContainer.classList.add("hidden");
+      }
+    });
+
+    // Standard central controller initiator
+    function renderActiveView() {
+      if (activeTab === "quiz") {
+        renderQuestionBody();
+      } else {
+        renderMistakesList();
+      }
+      updateStatsUI();
+    }
+
+    // Boot application right away
+    window.onload = initAppState;
+  </script>
+</body>
+
+</html>
