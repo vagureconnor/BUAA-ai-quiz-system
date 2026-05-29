@@ -1,385 +1,70 @@
 <!doctype html>
 <html lang="zh-CN">
-
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>《人工智能导论》随机答题系统 | 课程模拟刷题平台</title>
-  <!-- Tailwind CSS Play CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-            mono: ['JetBrains Mono', 'monospace'],
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>《人工智能导论》随机答题系统</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Open Sans', 'Helvetica Neue', 'sans-serif'],
+              mono: ['JetBrains Mono', 'Fira Code', 'monospace']
+            }
           }
         }
       }
-    };
-  </script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
-
-    /* Custom smooth transitions */
-    .fade-in {
-      animation: fadeIn 0.3s ease-out;
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(8px);
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(4px); }
+        to { opacity: 1; transform: translateY(0); }
       }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
+      .animate-fadeIn {
+        animation: fadeIn 0.18s ease-out forwards;
       }
-    }
+      body {
+        font-family: 'Inter', sans-serif;
+      }
+      /* Custom scrollbars */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #CBD5E1;
+        border-radius: 9999px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #94A3B8;
+      }
+    </style>
+    <!-- React & ReactDOM 18 UMD -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <!-- Babel Standalone -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+  </head>
+  <body class="bg-[#F8FAFC] text-[#1E293B]">
+    <div id="root"></div>
 
-    /* Custom elegant scrollbar styling for maximum workspace aesthetic */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
+    <script type="text/babel">
+      const { useState, useEffect, useRef } = React;
 
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: #CBD5E1;
-      border-radius: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: #94A3B8;
-    }
-  </style>
-</head>
-
-<body class="bg-[#F8FAFC] text-[#1E293B] font-sans md:h-screen md:overflow-hidden flex flex-col min-h-screen">
-
-  <!-- HEADER BAR -->
-  <header class="bg-white border-b border-[#E2E8F0] shadow-sm shrink-0">
-    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-row items-center justify-between gap-4">
-      <div class="flex items-center gap-3">
-        <div class="p-2 bg-indigo-600 text-white rounded-xl shadow-md">
-          <!-- Dice Icon SVG -->
-          <svg class="w-6 h-6 text-indigo-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-          </svg>
-        </div>
-        <div>
-          <h1 class="text-sm md:text-base font-bold text-[#0F172A] tracking-tight leading-tight">《人工智能导论》随机答题系统</h1>
-          <p class="text-[10px] md:text-xs text-[#64748B] mt-0.5">课程离线刷题平台 | 360道精选题库一键部署</p>
-        </div>
-      </div>
-
-      <button onclick="handleResetProgress()"
-        class="flex items-center gap-1 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-95 cursor-pointer shrink-0">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H17" />
-        </svg>
-        <span>重新开始</span>
-      </button>
-    </div>
-  </header>
-
-  <!-- MAIN APP WRAPPER -->
-  <main
-    class="max-w-6xl mx-auto px-4 py-3 md:py-4 flex-1 md:overflow-hidden flex flex-col md:grid md:grid-cols-12 md:gap-6 w-full min-h-0 gap-4">
-
-    <!-- LEFT COLUMN (STATS & NAVIGATION) -->
-    <div class="md:col-span-4 shrink-0 flex flex-col gap-4 md:h-full justify-between pb-2">
-      <div class="flex flex-col gap-4">
-        <!-- STATS DASHBOARD -->
-        <section
-          class="bg-white p-4 rounded-3xl border border-[#E2E8F0] shadow-sm grid grid-cols-2 md:flex md:flex-col gap-2.5 w-full">
-          <h3
-            class="col-span-2 text-xs font-bold text-[#0F172A] pb-2 border-b border-slate-150 hidden md:block uppercase tracking-wider">
-            实时答题数据面板</h3>
-
-          <div
-            class="flex items-center gap-2 bg-blue-50 border border-blue-100 text-blue-700 px-3 py-2 rounded-2xl w-full">
-            <!-- Timer SVG -->
-            <svg class="w-4 h-4 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <div class="flex flex-col min-w-0">
-              <span class="text-[9px] text-blue-550 scale-95 origin-left font-sans leading-none">用时累计</span>
-              <span id="stats-timer"
-                class="text-xs md:text-sm font-mono font-bold text-blue-900 leading-tight mt-0.5 truncate">0分0秒</span>
-            </div>
-          </div>
-
-          <div
-            class="flex items-center gap-2 bg-green-50 border border-green-100 text-green-700 px-3 py-2 rounded-2xl w-full">
-            <!-- Rate SVG -->
-            <svg class="w-4 h-4 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-            </svg>
-            <div class="flex flex-col min-w-0">
-              <span class="text-[9px] text-green-550 scale-95 origin-left font-sans leading-none">做题正确率</span>
-              <span id="stats-accuracy"
-                class="text-xs md:text-sm font-mono font-bold text-green-900 leading-tight mt-0.5 truncate">0%</span>
-            </div>
-          </div>
-
-          <div
-            class="flex items-center gap-2 bg-slate-50 border border-slate-200 text-slate-700 px-3 py-2 rounded-2xl w-full">
-            <!-- Clipboard SVG -->
-            <svg class="w-4 h-4 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-            <div class="flex flex-col min-w-0">
-              <span class="text-[9px] text-slate-500 scale-95 origin-left font-sans leading-none">已答覆盖率</span>
-              <span id="stats-progress"
-                class="text-xs md:text-sm font-mono font-bold text-slate-900 leading-tight mt-0.5 truncate">0 / 360
-                题</span>
-            </div>
-          </div>
-
-          <div
-            class="flex items-center gap-2 bg-rose-50 border border-rose-100 text-rose-700 px-3 py-2 rounded-2xl w-full">
-            <!-- Folder SVG -->
-            <svg class="w-4 h-4 text-rose-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
-            <div class="flex flex-col min-w-0">
-              <span class="text-[9px] text-rose-550 scale-95 origin-left font-sans leading-none">累计错题数</span>
-              <span id="stats-mistakes"
-                class="text-xs md:text-sm font-mono font-bold text-rose-900 leading-tight mt-0.5 truncate">0 题</span>
-            </div>
-          </div>
-        </section>
-
-        <!-- NAVIGATION TABS -->
-        <div class="flex flex-col gap-3 bg-white p-3 rounded-3xl border border-[#E2E8F0] shadow-sm">
-          <h3
-            class="text-xs font-bold text-[#0F172A] pb-1.5 border-b border-slate-100 uppercase tracking-wider hidden md:block">
-            功能导航与跳转</h3>
-
-          <div class="flex flex-row md:flex-col gap-2 w-full">
-            <button onclick="switchTab('quiz')" id="tab-btn-quiz"
-              class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all bg-indigo-600 text-white shadow-sm cursor-pointer">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              <span>随机刷题</span>
-            </button>
-
-            <button onclick="switchTab('mistakes')" id="tab-btn-mistakes"
-              class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all text-[#475569] hover:bg-slate-50 hover:text-[#0F172A] relative cursor-pointer">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-              </svg>
-              <span>智能错题本</span>
-              <span id="mistake-badge"
-                class="hidden absolute top-1 right-2 bg-rose-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold border-2 border-white">0</span>
-            </button>
-          </div>
-
-          <!-- Fuzzy Search Box (Supports text fuzzy query) -->
-          <div class="hidden md:flex flex-col gap-1 pt-2.5 border-t border-slate-100 relative">
-            <span class="text-[10px] text-slate-400 font-mono">找题模糊搜索：</span>
-            <div class="relative w-full">
-              <input id="fuzzy-search-input" type="text" placeholder="输入关键字搜索题库 / 题号..."
-                class="w-full pl-8 pr-3 py-2 bg-slate-50 border border-[#CBD5E1] focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 rounded-xl text-xs placeholder:text-slate-400 transition-all font-sans"
-                oninput="handleFuzzySearch(this.value, 'fuzzy-search-results')"
-                onfocus="handleFuzzySearch(this.value, 'fuzzy-search-results')" />
-              <!-- Search Icon -->
-              <svg class="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor"
-                viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-            <!-- Floating Suggestions Dropdown -->
-            <div id="fuzzy-search-results"
-              class="hidden absolute left-0 right-0 top-full mt-1.5 max-h-64 overflow-y-auto bg-white border border-[#CBD5E1] rounded-xl shadow-lg z-50 divide-y divide-slate-100">
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- FOOTER HELPERS & KEYNOTES -->
-      <footer
-        class="p-4 bg-indigo-950 text-indigo-100 rounded-3xl text-left border border-indigo-900 shadow-sm flex flex-col gap-3.5 hidden md:flex shrink-0">
-        <div class="flex items-center gap-3">
-          <div class="p-2 bg-indigo-900/60 rounded-xl text-indigo-400 shrink-0">
-            <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          </div>
-          <div>
-            <h4 class="text-xs font-bold text-white">开发者</h4>
-            <p class="text-xs text-indigo-300 mt-0.5 font-mono">小红书@最伟大的CC</p>
-          </div>
-        </div>
-        <div
-          class="flex items-center justify-between text-[9px] border-t border-indigo-900/60 pt-2.5 text-indigo-300 font-mono">
-          <span>本地存储保存</span>
-          <span class="text-green-400 font-bold">● 100% 离线缓存运行</span>
-        </div>
-      </footer>
-    </div>
-
-    <!-- RIGHT COLUMN (VIEWPORTS WORKSPACE) -->
-    <div class="md:col-span-8 flex flex-col min-h-0 md:h-full transition-all md:overflow-hidden mt-4 md:mt-0 pr-0.5">
-
-      <!-- QUIZ VIEWPORT -->
-      <div id="quiz-view" class="flex flex-col gap-4 md:h-full md:overflow-hidden min-h-0">
-        <!-- DIAGNOSTIC QUESTION CARD -->
-        <div
-          class="bg-white rounded-3xl border border-[#E2E8F0] shadow-sm overflow-hidden text-left flex-1 flex flex-col min-h-0">
-
-          <div class="px-6 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0">
-            <span id="question-category"
-              class="px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-full border border-indigo-100">
-              分类加载中...
-            </span>
-            <span id="question-path-info" class="text-xs font-mono text-slate-500">
-              当前随机路径: 第 1 题 / 题号 No.1
-            </span>
-          </div>
-
-          <!-- Central scrollable container -->
-          <div class="p-6 md:p-8 flex-1 md:overflow-y-auto min-h-0">
-            <h2 class="text-base md:text-lg font-bold text-[#0F172A] leading-relaxed mb-4 md:mb-5">
-              <span id="question-num-prefix" class="text-indigo-600 font-mono font-semibold mr-2">No.1</span>
-              <span id="question-stem">题目内容加载中...</span>
-            </h2>
-
-            <!-- In desktop, layout option list into 2 columns grid to optimize physical spacing -->
-            <div id="options-block" class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
-              <!-- Options buttons populated dynamically -->
-            </div>
-
-            <!-- Explanation Panel (nested inside scroll so it expands gracefully) -->
-            <div id="explanation-panel"
-              class="hidden p-5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl fade-in mt-4">
-              <div class="flex items-center justify-between gap-4 pb-2.5 mb-3 border-b border-slate-200">
-                <div class="flex items-center gap-2">
-                  <span id="grading-badge" class="flex items-center gap-1 font-bold text-xs px-2.5 py-1 rounded-lg">
-                    <!-- Status badge -->
-                  </span>
-                  <span class="text-xs font-mono text-slate-500">
-                    你的选择: <strong id="user-selected-opt" class="text-slate-800">无</strong>
-                  </span>
-                </div>
-                <div class="text-xs font-mono font-bold text-slate-800">
-                  标准答案: <span id="correct-answer-badge"
-                    class="bg-green-600 text-white rounded-md px-2 py-0.5 ml-1">A</span>
-                </div>
-              </div>
-              <div>
-                <p class="text-[11px] font-bold text-indigo-700 uppercase tracking-wider mb-1 font-mono">知识考点精析:</p>
-                <p id="explanation-text" class="text-xs md:text-sm text-[#475569] leading-relaxed">
-                  解析具体内容极速呈现。
-                </p>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- LOWER CONTROLS (pinned inside right panel workspace, shrink-0) -->
-        <div
-          class="flex items-center justify-between bg-white px-5 py-4 rounded-2xl border border-[#E2E8F0] shadow-sm shrink-0">
-          <div class="flex gap-2">
-            <button onclick="handlePrevQuestion()" id="prev-btn"
-              class="px-4 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 hover:text-slate-900 text-xs md:text-sm font-medium rounded-xl transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-              </svg>
-              <span>上一题</span>
-            </button>
-
-            <button onclick="handleNextQuestion()" id="next-btn"
-              class="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-150 text-indigo-700 text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer">
-              <span>下一题</span>
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          </div>
-
-          <button onclick="generateNewRandomJump()"
-            class="px-4 py-2 bg-[#0F172A] hover:bg-slate-800 text-white text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 cursor-pointer active:scale-95">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H17" />
-            </svg>
-            <span>随机换一题</span>
-          </button>
-        </div>
-
-        <!-- MOBILE RESPONSIVE FUZZY SEARCH BAR -->
-        <div class="sm:hidden bg-white p-3.5 rounded-2xl border border-slate-200 flex flex-col gap-2 relative">
-          <div class="flex items-center justify-between gap-2 font-mono">
-            <span class="text-xs text-slate-500 shrink-0">找题模糊搜索:</span>
-            <div class="relative flex-1 min-w-0">
-              <input id="fuzzy-search-input-mobile" type="text" placeholder="搜索题目、解析或考点..."
-                class="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs placeholder:text-slate-400 font-sans"
-                oninput="handleFuzzySearch(this.value, 'fuzzy-search-results-mobile')"
-                onfocus="handleFuzzySearch(this.value, 'fuzzy-search-results-mobile')" />
-              <!-- Search Icon -->
-              <svg class="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor"
-                viewBox="0 0 24 24" style="top: 10px;">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-          </div>
-          <!-- Mobile suggestions dropdown -->
-          <div id="fuzzy-search-results-mobile"
-            class="hidden absolute left-0 right-0 top-full mt-1.5 max-h-56 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-lg z-50 divide-y divide-slate-100">
-          </div>
-        </div>
-      </div>
-
-      <!-- MISTAKES TAB VIEWPORT -->
-      <div id="mistakes-view"
-        class="hidden bg-white p-6 rounded-3xl border border-[#E2E8F0] shadow-sm text-left md:h-full flex flex-col md:overflow-hidden min-h-0">
-        <div class="pb-3 border-b border-rose-100 flex items-center justify-between flex-wrap gap-2 shrink-0">
-          <div>
-            <h2 class="text-base md:text-lg font-bold text-slate-900 flex items-center gap-2 leading-tight">
-              <span class="p-1 px-2.5 bg-rose-100 text-rose-600 rounded-lg text-xs">错题</span>
-              <span>错题复习本 (<span id="mistakes-count-badge">0</span> 题)</span>
-            </h2>
-            <p class="text-[10px] md:text-xs text-slate-400 mt-1">作答错误的题目会在此自动归档。攻克错题是提分的金捷径！</p>
-          </div>
-          <button onclick="clearAllMistakes()" id="clear-mistakes-btn"
-            class="text-xs bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 px-3 py-1.5 rounded-lg transition-all font-semibold active:scale-95 cursor-pointer shrink-0">
-            清空错题记录
-          </button>
-        </div>
-
-        <!-- Mistakes lists internally scrollable as well -->
-        <div id="mistakes-list-container" class="flex flex-col gap-4 overflow-y-auto pr-1 flex-1 min-h-0 mt-4">
-          <!-- Populated dynamically -->
-        </div>
-      </div>
-
-    </div>
-
-  </main>
-
-  <!-- 360 COMPRESSED QUESTIONS DATA & MAIN VIEW ENGINE SCRIPT -->
-  <script>
-    // 360 Complete Compressed Questions
-    const QUESTIONS_DATA = [
+      // 题库数据
+      const QUESTIONS_DATA = [
       { id: 1, c: "AI历史与概念", s: "图灵于 ____ 年发表论文《计算与智能》，提出图灵测试。", o: ["1940", "1950", "1960", "1970"], a: "B", e: "阿兰·图灵于1950年发表了具有里程碑意义的论文《计算机器与智能》，并在其中首次提出了著名的‘模仿游戏’（即图灵测试），用以探讨机器是否具备人类难以区分的智能行为表现。" },
       { id: 2, c: "AI历史与概念", s: "截至目前，人工智能经历了 ____ 次低谷。", o: ["一", "二", "三", "四"], a: "B", e: "人工智能自诞生以来，由于技术瓶颈或期望过高，分别在20世纪70年代和80年代末经历了两次重大的学术与资金低谷期，在历史上被称为两次‘AI寒冬’。" },
       { id: 3, c: "AI历史与概念", s: "图灵测试要求，超过 ____ 的测试者不能确定出被测试者是人还是机器。", o: ["10%", "20%", "30%", "40%"], a: "C", e: "图灵在最初设计测试时设定，如果在一系列各为五分钟的问答测试中，机器能让超过30%的人类裁判裁判无法准确分辨其是人类还是机器，则认为该机器通过了智能测试。" },
@@ -742,603 +427,936 @@
       { id: 360, c: "AI安全与治理", s: "AI  风险防范治理的关键目标是？", o: ["优先保证模型计算效率", "平衡技术创新与道德部署", "减少模型参数量以降低成本", "扩大  AI  在军事领域的应用"], a: "B", e: "人工智能风险防范治理的核心靶向，在于最大化寻找既能全面释放新质生产力的“技术创新”与确保人权法治道德红线的“道德部署”之间的动态平衡中轴线。" }
     ];
 
-    // Array mapping option letters to indices
-    const OPTION_KEYS = ["A", "B", "C", "D"];
+      const OPTION_KEYS = ["A", "B", "C", "D"];
 
-    // Default State Configuration Object
-    let progress = {
-      answers: {}, // { questionId: selectedKey }
-      historyPath: [], // Array representing random path timeline
-      currentPathIndex: -1, // Current focused index inside historyPath
-      studySeconds: 0
-    };
+      // 封装的 Lucide 网页原生图标转换组件
+      function Icon({ name, className = "w-4 h-4" }) {
+        const spanRef = useRef(null);
 
-    let activeTab = "quiz"; // "quiz" | "mistakes"
-
-    // Initialize Progress from LocalStorage optionally
-    function initAppState() {
-      try {
-        const saved = localStorage.getItem("ai_quiz_standalone_v1");
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (parsed && typeof parsed === "object") {
-            progress.answers = parsed.answers || {};
-            progress.historyPath = parsed.historyPath || [];
-            progress.currentPathIndex = typeof parsed.currentPathIndex === 'number' ? parsed.currentPathIndex : -1;
-            progress.studySeconds = parsed.studySeconds || 0;
+        useEffect(() => {
+          if (spanRef.current) {
+            spanRef.current.innerHTML = `<i data-lucide="${name}" class="${className}"></i>`;
+            if (window.lucide && typeof window.lucide.createIcons === "function") {
+              window.lucide.createIcons({
+                nodeList: [spanRef.current.querySelector('i')]
+              });
+            }
           }
-        }
-      } catch (e) {
-        console.error("Failed parsing localStorage, resetting", e);
+        }, [name, className]);
+
+        return <span ref={spanRef} className="inline-flex items-center justify-center pointer-events-none" />;
       }
 
-      // Initialize with a random starting question if path is empty
-      if (!progress.historyPath || progress.historyPath.length === 0) {
-        const initialId = QUESTIONS_DATA[Math.floor(Math.random() * QUESTIONS_DATA.length)].id;
-        progress.historyPath = [initialId];
-        progress.currentPathIndex = 0;
-      }
+      function App() {
+        // --- 状态定义 ---
+        const [answers, setAnswers] = useState({});
+        const [historyPath, setHistoryPath] = useState([]);
+        const [currentPathIndex, setCurrentPathIndex] = useState(-1);
+        const [seqIndex, setSeqIndex] = useState(0); // 顺序刷题索引
+        const [studySeconds, setStudySeconds] = useState(0);
+        const [activeTab, setActiveTab ] = useState("sequential"); // 默认展示顺序刷题
 
-      // Setup Timer Interrupt
-      setInterval(() => {
-        progress.studySeconds += 1;
-        saveToLocalStorage();
-        updateStatsUI();
-      }, 1000);
+        // 搜索相关状态
+        const [dQuery, setDQuery] = useState("");
+        const [dResults, setDResults] = useState([]);
+        const [mQuery, setMQuery] = useState("");
+        const [mResults, setMResults] = useState([]);
+        const [isDSearchFocused, setIsDSearchFocused] = useState(false);
+        const [isMSearchFocused, setIsMSearchFocused] = useState(false);
 
-      // Immediate Initial Render
-      renderActiveView();
-    }
+        // --- 初始化及本地状态持久化 ---
+        useEffect(() => {
+          try {
+            const cachedAnswers = localStorage.getItem("ai_quiz_answers_v1");
+            const cachedPath = localStorage.getItem("ai_quiz_history_path_v1");
+            const cachedIndex = localStorage.getItem("ai_quiz_cur_index_v1");
+            const cachedSeqIndex = localStorage.getItem("ai_quiz_seq_index_v1");
+            const cachedSeconds = localStorage.getItem("ai_quiz_study_seconds_v1");
+            const cachedTab = localStorage.getItem("ai_quiz_active_tab_v1");
 
-    function saveToLocalStorage() {
-      localStorage.setItem("ai_quiz_standalone_v1", JSON.stringify(progress));
-    }
+            if (cachedAnswers) {
+              setAnswers(JSON.parse(cachedAnswers));
+            }
 
-    // Format time elapsed
-    function formatDuration(totalSeconds) {
-      const hours = Math.floor(totalSeconds / 3600);
-      const minutes = Math.floor((totalSeconds % 3600) / 60);
-      const seconds = totalSeconds % 60;
-      let out = "";
-      if (hours > 0) out += hours + "时";
-      out += (minutes > 0 ? minutes : "0") + "分";
-      out += seconds + "秒";
-      return out;
-    }
+            if (cachedSeqIndex) {
+              setSeqIndex(parseInt(cachedSeqIndex, 10));
+            }
 
-    // Compile Statistics from active responses
-    function calculateStats() {
-      const answeredIds = Object.keys(progress.answers).map(Number);
-      const total = QUESTIONS_DATA.length;
-      let correct = 0;
+            if (cachedTab) {
+              setActiveTab(cachedTab);
+            }
 
-      answeredIds.forEach(id => {
-        const q = QUESTIONS_DATA.find(item => item.id === id);
-        if (q && progress.answers[id] === q.a) {
-          correct++;
-        }
-      });
+            let parsedPath = [];
+            if (cachedPath) {
+              parsedPath = JSON.parse(cachedPath);
+            }
 
-      const accuracy = answeredIds.length > 0 ? Math.round((correct / answeredIds.length) * 100) : 0;
+            let parsedIndex = -1;
+            if (cachedIndex) {
+              parsedIndex = parseInt(cachedIndex, 10);
+            }
 
-      // Mistakes are answers that have been logged but are incorrect
-      const mistakesList = QUESTIONS_DATA.filter(q => {
-        const uAns = progress.answers[q.id];
-        return uAns !== undefined && uAns !== q.a;
-      });
+            if (parsedPath.length === 0 || parsedIndex === -1) {
+              const randQ = QUESTIONS_DATA[Math.floor(Math.random() * QUESTIONS_DATA.length)];
+              setHistoryPath([randQ.id]);
+              setCurrentPathIndex(0);
+            } else {
+              setHistoryPath(parsedPath);
+              setCurrentPathIndex(parsedIndex);
+            }
 
-      return {
-        totalAnswered: answeredIds.length,
-        correctCount: correct,
-        accuracyRate: accuracy,
-        mistakesCount: mistakesList.length,
-        mistakes: mistakesList
-      };
-    }
-
-    // Update Top Status Stats Panel Indicators
-    function updateStatsUI() {
-      const stats = calculateStats();
-
-      document.getElementById("stats-timer").innerText = formatDuration(progress.studySeconds);
-      document.getElementById("stats-accuracy").innerText = stats.accuracyRate + "%";
-      document.getElementById("stats-progress").innerText = stats.totalAnswered + " / " + QUESTIONS_DATA.length + " 题";
-      document.getElementById("stats-mistakes").innerText = stats.mistakesCount + " 题";
-
-      // Badges updates
-      const badge = document.getElementById("mistake-badge");
-      if (stats.mistakesCount > 0) {
-        badge.innerText = stats.mistakesCount;
-        badge.classList.remove("hidden");
-      } else {
-        badge.classList.add("hidden");
-      }
-    }
-
-    // Dynamic Option Selector Selection handler
-    function handleSelectOption(optKey, questionId) {
-      // Prevent double selections / changing logged answers
-      if (progress.answers[questionId] !== undefined) return;
-
-      progress.answers[questionId] = optKey;
-      saveToLocalStorage();
-      updateStatsUI();
-
-      // Re-render only options and explanation
-      renderQuestionBody();
-    }
-
-    // Smart helper to select next random target (preferring unanswered questions)
-    function extractNextRandomQuestionId(currentId) {
-      const answeredIds = Object.keys(progress.answers).map(Number);
-      const allIds = QUESTIONS_DATA.map(q => q.id);
-      const unansweredIds = allIds.filter(id => !answeredIds.includes(id));
-
-      const candidatePool = unansweredIds.length > 0 ? unansweredIds : allIds;
-      // Filter out current ID to avoid immediately showing the same question twice
-      let filteredPool = candidatePool.filter(id => id !== currentId);
-      if (filteredPool.length === 0) {
-        filteredPool = allIds;
-      }
-
-      const randomIndex = Math.floor(Math.random() * filteredPool.length);
-      return filteredPool[randomIndex];
-    }
-
-    // Trigger standard jump to a specific static question index
-    function jumpToQuestionId(id) {
-      const qExists = QUESTIONS_DATA.some(q => q.id === id);
-      if (!qExists) return;
-
-      const existingPathIndex = progress.historyPath.indexOf(id);
-      if (existingPathIndex !== -1) {
-        progress.currentPathIndex = existingPathIndex;
-      } else {
-        progress.historyPath.splice(progress.currentPathIndex + 1);
-        progress.historyPath.push(id);
-        progress.currentPathIndex = progress.historyPath.length - 1;
-      }
-
-      saveToLocalStorage();
-      switchTab("quiz");
-    }
-
-    // Quick jump form submissions handlers
-    function handleJumpSubmit() {
-      const inputNum = parseInt(document.getElementById("jump-input").value, 10);
-      const qExists = QUESTIONS_DATA.some(q => q.id === inputNum);
-      if (!isNaN(inputNum) && qExists) {
-        jumpToQuestionId(inputNum);
-        document.getElementById("jump-input").value = "";
-      } else {
-        alert("请输入存在的有效题号进行跳转。");
-      }
-    }
-
-    function handleMobileJumpSubmit() {
-      const inputNum = parseInt(document.getElementById("jump-input-mobile").value, 10);
-      const qExists = QUESTIONS_DATA.some(q => q.id === inputNum);
-      if (!isNaN(inputNum) && qExists) {
-        jumpToQuestionId(inputNum);
-        document.getElementById("jump-input-mobile").value = "";
-      } else {
-        alert("请输入存在的有效题号进行跳转。");
-      }
-    }
-
-    // Next Question handler
-    function handleNextQuestion() {
-      const currentId = progress.historyPath[progress.currentPathIndex];
-
-      // Check if we are moving forward into an ALREADY traced history path
-      if (progress.currentPathIndex < progress.historyPath.length - 1) {
-        progress.currentPathIndex += 1;
-      } else {
-        // Choose a new random question
-        const nextId = extractNextRandomQuestionId(currentId);
-        progress.historyPath.push(nextId);
-        progress.currentPathIndex = progress.historyPath.length - 1;
-      }
-
-      saveToLocalStorage();
-      updateStatsUI();
-      renderQuestionBody();
-    }
-
-    // Previous Question handler (safely step back inside our own history path)
-    function handlePrevQuestion() {
-      if (progress.currentPathIndex > 0) {
-        progress.currentPathIndex -= 1;
-        saveToLocalStorage();
-        updateStatsUI();
-        renderQuestionBody();
-      }
-    }
-
-    // Fast manual trigger box "随机换一题" button click
-    function generateNewRandomJump() {
-      const currentId = progress.historyPath[progress.currentPathIndex];
-      const nextId = extractNextRandomQuestionId(currentId);
-
-      // Erase downstream history from current position, appending new jump
-      progress.historyPath.splice(progress.currentPathIndex + 1);
-      progress.historyPath.push(nextId);
-      progress.currentPathIndex = progress.historyPath.length - 1;
-
-      saveToLocalStorage();
-      updateStatsUI();
-      renderQuestionBody();
-    }
-
-    // Switch active Navigation Desk tab
-    function switchTab(target) {
-      activeTab = target;
-
-      // Adjust visual tab buttons classes
-      const btnQuiz = document.getElementById("tab-btn-quiz");
-      const btnMistakes = document.getElementById("tab-btn-mistakes");
-      const quizView = document.getElementById("quiz-view");
-      const mistakesView = document.getElementById("mistakes-view");
-
-      if (activeTab === "quiz") {
-        btnQuiz.className = "flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all bg-indigo-600 text-white shadow-sm cursor-pointer";
-        btnMistakes.className = "flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all text-[#475569] hover:bg-slate-50 hover:text-[#0F172A] relative cursor-pointer";
-
-        quizView.classList.remove("hidden");
-        mistakesView.classList.add("hidden");
-        renderQuestionBody();
-      } else {
-        btnQuiz.className = "flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all text-[#475569] hover:bg-slate-50 hover:text-[#0F172A] cursor-pointer";
-        btnMistakes.className = "flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all bg-indigo-600 text-white shadow-sm relative cursor-pointer";
-
-        quizView.classList.add("hidden");
-        mistakesView.classList.remove("hidden");
-        renderMistakesList();
-      }
-      updateStatsUI();
-    }
-
-    // Reset entire State with nice clear confirmation dialogues
-    function handleResetProgress() {
-      if (confirm("您确定要清空当前的全部答题战绩、错题记录以及累计用时，重新开始随机刷题吗？")) {
-        const initialId = QUESTIONS_DATA[Math.floor(Math.random() * QUESTIONS_DATA.length)].id;
-        progress = {
-          answers: {},
-          historyPath: [initialId],
-          currentPathIndex: 0,
-          studySeconds: 0
-        };
-        saveToLocalStorage();
-        switchTab("quiz");
-      }
-    }
-
-    // Compile and render the Active question panel
-    function renderQuestionBody() {
-      const currentId = progress.historyPath[progress.currentPathIndex];
-      const qObj = QUESTIONS_DATA.find(q => q.id === currentId) || QUESTIONS_DATA[0];
-
-      // Populate Category and Path indices info
-      document.getElementById("question-category").innerText = qObj.c;
-      document.getElementById("question-path-info").innerText = `当前随机路径: 第 ${progress.currentPathIndex + 1} 题 / 题号 No.${qObj.id}`;
-
-      // Stems populators
-      document.getElementById("question-num-prefix").innerText = `No.${qObj.id}`;
-      document.getElementById("question-stem").innerText = qObj.s;
-
-      // Fetch user logged choice for this question
-      const userChoice = progress.answers[qObj.id];
-      const feedbackContainer = document.getElementById("options-block");
-      feedbackContainer.innerHTML = "";
-
-      // Build Option Button structure
-      qObj.o.forEach((optText, index) => {
-        const optKey = OPTION_KEYS[index];
-        const isSelected = userChoice === optKey;
-        const isCorrect = optKey === qObj.a;
-        const hasAnswered = userChoice !== undefined;
-
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.onclick = () => handleSelectOption(optKey, qObj.id);
-
-        let styleClasses = "min-h-[50px] w-full text-left px-5 py-3.5 rounded-2xl border-2 transition-all flex items-center justify-between gap-4 cursor-pointer text-sm md:text-base ";
-
-        if (hasAnswered) {
-          if (isCorrect) {
-            styleClasses += "border-green-300 bg-green-50 text-green-900 shadow-sm";
-          } else if (isSelected) {
-            styleClasses += "border-rose-300 bg-rose-50 text-rose-900 shadow-sm";
-          } else {
-            styleClasses += "border-slate-100 bg-white opacity-50 text-slate-400";
+            if (cachedSeconds) {
+              setStudySeconds(parseInt(cachedSeconds, 10));
+            }
+          } catch (e) {
+            console.warn("读取 LocalStorage 缓存失败：", e);
+            const randQ = QUESTIONS_DATA[Math.floor(Math.random() * QUESTIONS_DATA.length)];
+            setHistoryPath([randQ.id]);
+            setCurrentPathIndex(0);
           }
-        } else {
-          styleClasses += "border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 text-slate-700";
-        }
+        }, []);
 
-        // Left elements
-        const innerLeft = document.createElement("div");
-        innerLeft.className = "flex items-center gap-3 flex-1";
-
-        const keyBadge = document.createElement("span");
-        let badgeClass = "w-7 h-7 shrink-0 flex items-center justify-center rounded-lg font-bold text-xs font-mono transition-all ";
-
-        if (isSelected) {
-          badgeClass += "bg-indigo-600 text-white";
-        } else if (hasAnswered && isCorrect) {
-          badgeClass += "bg-green-600 text-white";
-        } else {
-          badgeClass += "bg-slate-100 text-slate-600";
-        }
-
-        keyBadge.className = badgeClass;
-        keyBadge.innerText = optKey;
-
-        const textSpan = document.createElement("span");
-        textSpan.className = "flex-1";
-        textSpan.innerText = optText;
-
-        innerLeft.appendChild(keyBadge);
-        innerLeft.appendChild(textSpan);
-        btn.appendChild(innerLeft);
-
-        // Right scoring symbols
-        if (hasAnswered) {
-          const innerRight = document.createElement("div");
-          if (isCorrect) {
-            innerRight.innerHTML = `
-                <svg class="w-5 h-5 text-green-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              `;
-          } else if (isSelected) {
-            innerRight.innerHTML = `
-                <svg class="w-5 h-5 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              `;
+        // 保存当前数据到本地
+        useEffect(() => {
+          if (historyPath.length > 0 && currentPathIndex !== -1) {
+            try {
+              localStorage.setItem("ai_quiz_answers_v1", JSON.stringify(answers));
+              localStorage.setItem("ai_quiz_history_path_v1", JSON.stringify(historyPath));
+              localStorage.setItem("ai_quiz_cur_index_v1", currentPathIndex.toString());
+              localStorage.setItem("ai_quiz_seq_index_v1", seqIndex.toString());
+              localStorage.setItem("ai_quiz_active_tab_v1", activeTab);
+            } catch (e) {
+              console.error("保存进度无法写入 LocalStorage：", e);
+            }
           }
-          btn.appendChild(innerRight);
-        }
+        }, [answers, historyPath, currentPathIndex, seqIndex, activeTab]);
 
-        feedbackContainer.appendChild(btn);
-      });
+        // 计时器逻辑
+        useEffect(() => {
+          const timer = setInterval(() => {
+            setStudySeconds((prev) => {
+              const val = prev + 1;
+              try {
+                localStorage.setItem("ai_quiz_study_seconds_v1", val.toString());
+              } catch (e) {}
+              return val;
+            });
+          }, 1000);
+          return () => clearInterval(timer);
+        }, []);
 
-      // Set Navigation Prev Button Disable Policy
-      document.getElementById("prev-btn").disabled = progress.currentPathIndex <= 0;
+        // 点击外部关闭搜索下拉
+        useEffect(() => {
+          const handleOutsideClick = () => {
+            setTimeout(() => {
+              setIsDSearchFocused(false);
+              setIsMSearchFocused(false);
+            }, 250);
+          };
+          window.addEventListener("click", handleOutsideClick);
+          return () => window.removeEventListener("click", handleOutsideClick);
+        }, []);
 
-      // Re-align Explanation Container Panel
-      const explainPanel = document.getElementById("explanation-panel");
-      if (userChoice !== undefined) {
-        explainPanel.classList.remove("hidden");
-        const isUserCorrect = userChoice === qObj.a;
-        const badgeEl = document.getElementById("grading-badge");
+        // --- 实时数据计算 ---
+        const answeredIds = Object.keys(answers).map(Number);
+        const totalQuestions = QUESTIONS_DATA.length;
 
-        if (isUserCorrect) {
-          badgeEl.className = "flex items-center gap-1 text-green-700 bg-green-100 px-2.5 py-1 rounded-lg";
-          badgeEl.innerHTML = `
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
-              </svg>
-              <span>回答正确</span>
-            `;
-        } else {
-          badgeEl.className = "flex items-center gap-1 text-rose-700 bg-rose-100 px-2.5 py-1 rounded-lg";
-          badgeEl.innerHTML = `
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              <span>回答错误</span>
-            `;
-        }
+        const correctCount = answeredIds.reduce((acc, id) => {
+          const q = QUESTIONS_DATA.find((item) => item.id === id);
+          if (q && answers[id] === q.a) {
+            return acc + 1;
+          }
+          return acc;
+        }, 0);
 
-        document.getElementById("user-selected-opt").innerText = userChoice;
-        document.getElementById("correct-answer-badge").innerText = qObj.a;
-        document.getElementById("explanation-text").innerText = qObj.e;
-      } else {
-        explainPanel.classList.add("hidden");
-      }
-    }
-
-    // Compile and render the Mistakes list notebook page
-    function renderMistakesList() {
-      const stats = calculateStats();
-      document.getElementById("mistakes-count-badge").innerText = stats.mistakesCount;
-
-      const clearBtn = document.getElementById("clear-mistakes-btn");
-      if (stats.mistakesCount > 0) {
-        clearBtn.classList.remove("hidden");
-      } else {
-        clearBtn.classList.add("hidden");
-      }
-
-      const container = document.getElementById("mistakes-list-container");
-      container.innerHTML = "";
-
-      if (stats.mistakesCount === 0) {
-        container.innerHTML = `
-            <div class="py-16 text-center text-[#94A3B8]">
-              <!-- Happy Correct Sparkle SVG -->
-              <svg class="mx-auto mb-4 w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <p class="text-sm font-semibold text-green-900">太棒了，目前没有任何错题记录！</p>
-              <p class="text-xs mt-1.5 text-slate-400">在随机答题模式下多多测试，确保知识点完全吃透巩固。</p>
-              <button
-                onclick="switchTab('quiz')"
-                class="mt-4 px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
-              >
-                开始答题
-              </button>
-            </div>
-          `;
-        return;
-      }
-
-      // Output all item cards sequential loop
-      stats.mistakes.forEach(item => {
-        const userChoice = progress.answers[item.id] || "无";
-        const card = document.createElement("div");
-        card.className = "p-4 sm:p-5 bg-rose-50/20 border border-rose-100 rounded-2xl flex flex-col justify-between gap-3 fade-in";
-
-        card.innerHTML = `
-            <div>
-              <div class="flex flex-wrap items-center gap-2 mb-2">
-                <span class="px-2 py-0.5 bg-rose-100 text-rose-800 font-mono text-[10px] font-bold rounded-md">
-                  题号 No.${item.id}
-                </span>
-                <span class="text-[10px] bg-slate-200 text-[#475569] px-2 py-0.5 rounded-full font-sans">
-                  ${item.c}
-                </span>
-                
-                <span class="ml-auto text-xs font-mono text-rose-700">
-                  你的选择: <strong class="font-bold">${userChoice}</strong>
-                </span>
-                <span class="text-xs font-mono text-green-700 pl-2 border-l border-rose-200">
-                  正确答案: <strong class="font-bold">${item.a}</strong>
-                </span>
-              </div>
-
-              <h4 class="text-sm font-bold text-slate-900 leading-relaxed mb-3">
-                ${item.s}
-              </h4>
-
-              <div class="bg-white p-3.5 rounded-xl border border-rose-100/40 text-xs text-[#475569] leading-relaxed">
-                <strong class="text-[#1E293B] block mb-1">权威解析：</strong>
-                ${item.e}
-              </div>
-            </div>
-
-            <div class="flex items-center justify-between pt-2 border-t border-rose-100/50">
-              <span class="text-[10px] text-[#64748B] italic">
-                智能答题系统 · 360道必刷题
-              </span>
-              
-              <button
-                onclick="retryQuestionInQuiz(${item.id})"
-                class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition-all cursor-pointer"
-              >
-                跳回重做
-              </button>
-            </div>
-          `;
-        container.appendChild(card);
-      });
-    }
-
-    // Jump to a specific mistake item, clear previous logged choice to allow retry
-    function retryQuestionInQuiz(id) {
-      delete progress.answers[id];
-      saveToLocalStorage();
-      jumpToQuestionId(id);
-    }
-
-    // Direct clean sweep for all mistakes list
-    function clearAllMistakes() {
-      if (confirm("该操作将清除您目前记录下的所有错题重做数据（但已答对的正确题型进度会继续保留）。确定要继续吗？")) {
-        const stats = calculateStats();
-        stats.mistakes.forEach(item => {
-          delete progress.answers[item.id];
+        const mistakesList = QUESTIONS_DATA.filter((q) => {
+          const uAns = answers[q.id];
+          return uAns !== undefined && uAns !== q.a;
         });
-        saveToLocalStorage();
-        switchTab("quiz");
-      }
-    }
 
-    // Fuzzy search across all 360 questions (by id, stem, category, explanation, or options)
-    function handleFuzzySearch(query, containerId) {
-      const container = document.getElementById(containerId);
-      if (!container) return;
+        const accuracyRate = answeredIds.length > 0 ? Math.round((correctCount / answeredIds.length) * 100) : 0;
 
-      const cleanQuery = query.trim().toLowerCase();
-      if (!cleanQuery) {
-        container.classList.add("hidden");
-        container.innerHTML = "";
-        return;
-      }
+        const formatDuration = (totalSecs) => {
+          const hours = Math.floor(totalSecs / 3600);
+          const mins = Math.floor((totalSecs % 3600) / 60);
+          const secs = totalSecs % 60;
+          let out = "";
+          if (hours > 0) out += hours + "h";
+          out += (mins > 0 ? mins : "0") + "m";
+          out += secs + "s";
+          return out;
+        };
 
-      const matches = QUESTIONS_DATA.filter(q => {
-        if (q.id.toString() === cleanQuery) return true;
-        if (q.c.toLowerCase().includes(cleanQuery)) return true;
-        if (q.s.toLowerCase().includes(cleanQuery)) return true;
-        if (q.e.toLowerCase().includes(cleanQuery)) return true;
-        if (q.o.some(opt => opt.toLowerCase().includes(cleanQuery))) return true;
-        return false;
-      });
+        // --- 核心业务行动 ---
+        const handleSelectOption = (optKey, questionId) => {
+          if (answers[questionId] !== undefined) return;
+          setAnswers((prev) => ({
+            ...prev,
+            [questionId]: optKey
+          }));
+        };
 
-      if (matches.length === 0) {
-        container.classList.remove("hidden");
-        container.innerHTML = `
-            <div class="p-3 text-xs text-slate-400 text-center font-sans">
-              未找到匹配的题目
-            </div>
-          `;
-        return;
-      }
+        const handleRevealAnswer = (questionId) => {
+          setAnswers((prev) => ({
+            ...prev,
+            [questionId]: "GIVE_UP"
+          }));
+        };
 
-      container.classList.remove("hidden");
-      container.innerHTML = matches.map(q => {
-        const highlightStem = q.s.length > 28 ? q.s.substring(0, 28) + "..." : q.s;
-        return `
-            <div
-              onclick="selectFuzzySearchResult(${q.id}, '${containerId}')"
-              class="p-2.5 hover:bg-slate-50 active:bg-slate-100 cursor-pointer text-left transition-colors text-xs border-b border-slate-100 last:border-0"
-            >
-              <div class="flex items-center justify-between mb-0.5">
-                <span class="font-mono font-bold text-indigo-600">No.${q.id}</span>
-                <span class="text-[9px] bg-indigo-50 text-indigo-700 px-1.5 py-0.2 rounded font-sans font-medium">${q.c}</span>
+        const isQuiz = activeTab === "quiz";
+        const isSeq = activeTab === "sequential";
+        const isQuizOrSeq = isQuiz || isSeq;
+
+        let qObj = null;
+        if (isQuiz) {
+          const currentQuestionId = historyPath[currentPathIndex];
+          qObj = QUESTIONS_DATA.find((q) => q.id === currentQuestionId) || QUESTIONS_DATA[0];
+        } else if (isSeq) {
+          qObj = QUESTIONS_DATA[seqIndex] || QUESTIONS_DATA[0];
+        }
+
+        const extractNextRandomId = (curId) => {
+          const unansweredIds = QUESTIONS_DATA.map((q) => q.id).filter((id) => !answeredIds.includes(id));
+          const pool = unansweredIds.length > 0 ? unansweredIds : QUESTIONS_DATA.map((q) => q.id);
+          let filtered = pool.filter((id) => id !== curId);
+          if (filtered.length === 0) {
+            filtered = QUESTIONS_DATA.map((q) => q.id);
+          }
+          return filtered[Math.floor(Math.random() * filtered.length)];
+        };
+
+        const jumpToQuestionId = (id) => {
+          const targetIndex = QUESTIONS_DATA.findIndex((q) => q.id === id);
+          if (targetIndex !== -1) {
+            setSeqIndex(targetIndex);
+          }
+
+          const idxInHistory = historyPath.indexOf(id);
+          if (idxInHistory !== -1) {
+            setCurrentPathIndex(idxInHistory);
+          } else {
+            const newPath = [...historyPath.slice(0, currentPathIndex + 1), id];
+            setHistoryPath(newPath);
+            setCurrentPathIndex(newPath.length - 1);
+          }
+          
+          if (activeTab === "mistakes") {
+            setActiveTab("sequential");
+          }
+        };
+
+        const handleNextQuestion = () => {
+          if (isSeq) {
+            if (seqIndex < QUESTIONS_DATA.length - 1) {
+              setSeqIndex((prev) => prev + 1);
+            }
+          } else {
+            if (!qObj) return;
+            if (currentPathIndex < historyPath.length - 1) {
+              setCurrentPathIndex(currentPathIndex + 1);
+            } else {
+              const nextId = extractNextRandomId(qObj.id);
+              setHistoryPath([...historyPath, nextId]);
+              setCurrentPathIndex(historyPath.length);
+            }
+          }
+        };
+
+        const handlePrevQuestion = () => {
+          if (isSeq) {
+            if (seqIndex > 0) {
+              setSeqIndex((prev) => prev - 1);
+            }
+          } else {
+            if (currentPathIndex > 0) {
+              setCurrentPathIndex(currentPathIndex - 1);
+            }
+          }
+        };
+
+        const handleResetProgress = () => {
+          if (confirm("您确定要清空当前的全部答题战绩、错题记录以及累计用时，重新开始刷题吗？")) {
+            const initialQ = QUESTIONS_DATA[Math.floor(Math.random() * QUESTIONS_DATA.length)];
+            setAnswers({});
+            setHistoryPath([initialQ.id]);
+            setCurrentPathIndex(0);
+            setSeqIndex(0);
+            setStudySeconds(0);
+            setActiveTab("sequential");
+          }
+        };
+
+        const handleRetryQuestion = (id) => {
+          setAnswers((prev) => {
+            const copy = { ...prev };
+            delete copy[id];
+            return copy;
+          });
+          jumpToQuestionId(id);
+        };
+
+        const handleClearAllMistakes = () => {
+          if (confirm("该操作将清除您当前记录的所有错题记录（但已独立答对的正确题型进度会继续保留）。确定要继续吗？")) {
+            setAnswers((prev) => {
+              const copy = { ...prev };
+              mistakesList.forEach((item) => {
+                delete copy[item.id];
+              });
+              return copy;
+            });
+            setActiveTab("sequential");
+          }
+        };
+
+        const getFuzzyMatches = (query) => {
+          const clean = query.trim().toLowerCase();
+          if (!clean) return [];
+          return QUESTIONS_DATA.filter((q) => {
+            return (
+              q.id.toString() === clean ||
+              q.c.toLowerCase().includes(clean) ||
+              q.s.toLowerCase().includes(clean) ||
+              q.e.toLowerCase().includes(clean) ||
+              q.o.some((opt) => opt.toLowerCase().includes(clean))
+            );
+          });
+        };
+
+        return (
+          <div className="w-full h-screen h-[100dvh] bg-[#F8FAFC] text-[#1E293B] font-sans flex flex-col overflow-hidden select-none">
+            
+            {/* 顶部通栏 HEADER */}
+            <header className="bg-white border-b border-[#E2E8F0] shadow-sm shrink-0 z-10">
+              <div className="max-w-6xl mx-auto px-4 py-2.5 md:py-3 flex flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 md:p-2 bg-indigo-600 text-white rounded-xl shadow-md shrink-0">
+                    <Icon name="book-open" className="w-5 h-5 md:w-6 md:h-6 text-indigo-50" />
+                  </div>
+                  <div>
+                    <h1 className="text-xs md:text-base font-bold text-[#0F172A] tracking-tight leading-none flex items-center gap-1.5">
+                      《人工智能导论》答题系统
+                    </h1>
+                    <p className="text-[9px] md:text-xs text-[#64748B] mt-1 shrink-0">
+                      课程离线模拟真题平台 | 支持顺序/随机刷题
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleResetProgress}
+                  className="flex items-center gap-1 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 px-2.5 py-1.5 md:px-3 md:py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-95 cursor-pointer shrink-0"
+                >
+                  <Icon name="rotate-ccw" className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">重新开始</span>
+                  <span className="sm:hidden text-[10px]">重置</span>
+                </button>
               </div>
-              <p class="text-slate-700 font-sans truncate leading-normal" title="${q.s}">${highlightStem}</p>
+            </header>
+
+            {/* 主工作空间 */}
+            <main className="max-w-6xl w-full mx-auto px-4 py-2 flex-1 flex flex-col lg:grid lg:grid-cols-12 lg:gap-6 min-h-0 overflow-hidden">
+              
+              {/* ===================== 左侧统计/导航（桌面端专属） ===================== */}
+              <div className="hidden lg:col-span-4 lg:flex flex-col justify-between h-full pb-4 min-h-0 overflow-y-auto pr-1">
+                <div className="flex flex-col gap-4 animate-fadeIn" onClick={(e) => e.stopPropagation()}>
+                  
+                  {/* 实时数据面板 */}
+                  <section className="bg-white p-4 rounded-3xl border border-[#E2E8F0] shadow-sm flex flex-col gap-2.5">
+                    <h2 className="text-xs font-bold text-[#0F172A] pb-2 border-b border-slate-100 uppercase tracking-wider flex items-center gap-1.5">
+                      <Icon name="award" className="w-4 h-4 text-indigo-600" />
+                      <span>实时答题数据面板</span>
+                    </h2>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="flex items-center gap-2 bg-blue-50/60 border border-blue-100/80 text-blue-800 px-3 py-2 rounded-2xl min-w-0">
+                        <div className="p-1.5 bg-white rounded-xl shrink-0 text-blue-500 shadow-sm flex items-center justify-center">
+                          <Icon name="clock" className="w-4 h-4 text-blue-500" />
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-[9px] text-blue-500 scale-95 origin-left leading-none font-medium">用时累计</span>
+                          <span className="text-xs font-mono font-bold text-blue-950 mt-1 truncate">{formatDuration(studySeconds)}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 bg-green-50/60 border border-green-100/80 text-green-800 px-3 py-2 rounded-2xl min-w-0">
+                        <div className="p-1.5 bg-white rounded-xl shrink-0 text-green-500 shadow-sm flex items-center justify-center">
+                          <Icon name="target" className="w-4 h-4 text-green-600" />
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-[9px] text-green-600 scale-95 origin-left leading-none font-medium">做题正确率</span>
+                          <span className="text-xs font-mono font-bold text-green-950 mt-1 truncate">{accuracyRate}%</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/85 text-slate-800 px-3 py-2 rounded-2xl min-w-0">
+                        <div className="p-1.5 bg-white rounded-xl shrink-0 text-slate-550 shadow-sm flex items-center justify-center">
+                          <Icon name="file-text" className="w-4 h-4 text-slate-500" />
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-[9px] text-slate-500 scale-95 origin-left leading-none font-medium">已答覆盖率</span>
+                          <span className="text-xs font-mono font-bold text-slate-950 mt-1 truncate">
+                            {answeredIds.length} / {totalQuestions}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 bg-rose-50/60 border border-rose-100/85 text-rose-800 px-3 py-2 rounded-2xl min-w-0">
+                        <div className="p-1.5 bg-white rounded-xl shrink-0 text-rose-500 shadow-sm flex items-center justify-center">
+                          <Icon name="x-circle" className="w-4 h-4 text-rose-500" />
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-[9px] text-rose-550 scale-95 origin-left leading-none font-medium">累计错题数</span>
+                          <span className="text-xs font-mono font-bold text-rose-950 mt-1 truncate">{mistakesList.length} 题</span>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* 功能导航与检索 CARD */}
+                  <div className="flex flex-col gap-3 bg-white p-3.5 rounded-3xl border border-[#E2E8F0] shadow-sm relative">
+                    <h3 className="text-xs font-bold text-[#0F172A] pb-1.5 border-b border-slate-100 uppercase tracking-wider flex items-center gap-1.5">
+                      <Icon name="book-marked" className="w-4 h-4 text-indigo-600" />
+                      <span>模块功能导航</span>
+                    </h3>
+
+                    <div className="flex flex-col gap-2">
+                      <button
+                        onClick={() => setActiveTab("sequential")}
+                        className={`w-full flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
+                          activeTab === "sequential"
+                            ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
+                            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                        }`}
+                      >
+                        <Icon name="list-ordered" className={`w-4 h-4 ${activeTab === "sequential" ? "text-white" : "text-slate-500"}`} />
+                        <span>顺序刷题</span>
+                      </button>
+
+                      <button
+                        onClick={() => setActiveTab("quiz")}
+                        className={`w-full flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
+                          activeTab === "quiz"
+                            ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
+                            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                        }`}
+                      >
+                        <Icon name="award" className={`w-4 h-4 ${activeTab === "quiz" ? "text-white" : "text-slate-500"}`} />
+                        <span>随机刷题</span>
+                      </button>
+
+                      <button
+                        onClick={() => setActiveTab("mistakes")}
+                        className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
+                          activeTab === "mistakes"
+                            ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
+                            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Icon name="book-marked" className={`w-4 h-4 ${activeTab === "mistakes" ? "text-white" : "text-slate-500"}`} />
+                          <span>错题本</span>
+                          {mistakesList.length > 0 && (
+                            <span className={`ml-2 text-xs font-bold px-2 py-0.5 rounded-full font-mono ${activeTab === "mistakes" ? "bg-white text-indigo-700" : "bg-rose-500 text-white"}`}>
+                              {mistakesList.length}
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    </div>
+
+                    {/* 电脑端搜索：相对定位流程，在输入框下方以卡片方式显示，不遮挡下方外部的开发者信息 */}
+                    <div className="flex flex-col gap-1 pt-1.5 border-t border-slate-100 relative">
+                      <div className="relative w-full">
+                        <input
+                          type="text"
+                          value={dQuery}
+                          onChange={(e) => {
+                            setDQuery(e.target.value);
+                            setDResults(getFuzzyMatches(e.target.value));
+                          }}
+                          onFocus={(e) => {
+                            e.stopPropagation();
+                            setIsDSearchFocused(true);
+                          }}
+                          placeholder="输入关键字、考点、题号搜索..."
+                          className="w-full pl-8 pr-8 py-1.5 bg-slate-50 border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 rounded-xl text-xs placeholder:text-slate-400"
+                        />
+                        <span className="absolute left-2.5 top-2 flex items-center justify-center">
+                          <Icon name="search" className="w-3.5 h-3.5 text-slate-400" />
+                        </span>
+                        {dQuery && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDQuery("");
+                              setDResults([]);
+                            }}
+                            className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600"
+                          >
+                            <Icon name="x" className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* 电脑端固定在下方框 (relative flow + border box)，避免浮动绝对定位导致的覆盖层遮挡左下角开发者 */}
+                      {isDSearchFocused && dQuery && (
+                        <div className="relative mt-2 max-h-52 overflow-y-auto bg-slate-50 border border-slate-200 rounded-xl divide-y divide-slate-100 p-1 animate-fadeIn">
+                          {dResults.length === 0 ? (
+                            <div className="p-3 text-xs text-slate-400 text-center">暂无搜索结果</div>
+                          ) : (
+                            dResults.map((item) => (
+                              <div
+                                key={item.id}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  jumpToQuestionId(item.id);
+                                  setIsDSearchFocused(false);
+                                  setDQuery("");
+                                }}
+                                className="p-2 hover:bg-slate-100 cursor-pointer text-left text-xs transition-all rounded-lg"
+                              >
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="font-mono font-bold text-indigo-600">No.{item.id}</span>
+                                  <span className="text-[9px] bg-indigo-50 text-indigo-700 px-1 rounded font-medium">{item.c}</span>
+                                </div>
+                                <p className="text-slate-700 truncate">{item.s}</p>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 经典精致左下角页脚 (开发者信息) - 无深色背景框 */}
+                <footer className="p-3 py-1 flex flex-col gap-2 shrink-0 select-none">
+                  <div className="flex items-center justify-between gap-2.5">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="p-1.5 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-600 flex items-center justify-center shadow-sm">
+                        <span className="text-xs font-bold font-mono">CC</span>
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="text-[10px] font-bold text-[#64748B] leading-none mb-1">开发者</h4>
+                        <p className="text-xs text-[#0F172A] font-mono font-bold truncate">小红书@最伟大的CC</p>
+                      </div>
+                    </div>
+                    <span className="text-[9px] text-green-600 font-mono font-bold flex items-center gap-1 shrink-0">
+                      <span className="w-1 h-1 rounded-full bg-green-500 animate-pulse font-normal"></span>
+                      100% 离线部署
+                    </span>
+                  </div>
+                </footer>
+              </div>
+
+              {/* ===================== 手机防遮挡端专属适配：顶部精简数据层 ===================== */}
+              <div className="lg:hidden shrink-0 flex flex-col gap-2 bg-white px-3 py-2 rounded-2xl border border-slate-200 shadow-sm" onClick={(e) => e.stopPropagation()}>
+                
+                {/* 扁平 stats */}
+                <div className="grid grid-cols-4 gap-1.5">
+                  <div className="bg-blue-50 border border-blue-100 text-blue-900 px-1 py-1 rounded-xl text-center min-w-0">
+                    <p className="text-[8px] text-blue-600 scale-90 leading-none">累计用时</p>
+                    <p className="text-xs font-mono font-bold truncate mt-0.5">{formatDuration(studySeconds)}</p>
+                  </div>
+                  <div className="bg-green-50 border border-green-100 text-green-900 px-1 py-1 rounded-xl text-center min-w-0">
+                    <p className="text-[8px] text-green-600 scale-90 leading-none">正确率</p>
+                    <p className="text-xs font-mono font-bold truncate mt-0.5">{accuracyRate}%</p>
+                  </div>
+                  <div className="bg-slate-50 border border-slate-200 text-slate-900 px-1 py-1 rounded-xl text-center min-w-0">
+                    <p className="text-[8px] text-slate-500 scale-90 leading-none">已覆盖</p>
+                    <p className="text-xs font-mono font-bold truncate mt-0.5">{answeredIds.length}/{totalQuestions}</p>
+                  </div>
+                  <div className="bg-rose-50 border border-rose-100 text-rose-900 px-1 py-1 rounded-xl text-center min-w-0">
+                    <p className="text-[8px] text-rose-600 scale-90 leading-none">错题本</p>
+                    <p className="text-xs font-mono font-bold truncate mt-0.5 text-rose-700">{mistakesList.length} 题</p>
+                  </div>
+                </div>
+
+                {/* 横向 Tab 切换 */}
+                <div className="flex flex-row gap-1.5 w-full mt-1">
+                  <button
+                    onClick={() => setActiveTab("sequential")}
+                    className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer transition-all ${
+                      isSeq ? "bg-indigo-600 text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    <Icon name="list-ordered" className="w-3.5 h-3.5" />
+                    <span>顺序刷题</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("quiz")}
+                    className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer transition-all ${
+                      isQuiz ? "bg-indigo-600 text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    <Icon name="award" className="w-3.5 h-3.5" />
+                    <span>随机刷题</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("mistakes")}
+                    className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer transition-all relative ${
+                      activeTab === "mistakes" ? "bg-indigo-600 text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    <Icon name="book-marked" className="w-3.5 h-3.5" />
+                    <span>错题本</span>
+                    {mistakesList.length > 0 && (
+                      <span className={`text-[10px] ml-1 px-1 py-0.2 rounded font-bold font-mono ${activeTab === 'mistakes' ? 'bg-white text-indigo-700' : 'bg-rose-500 text-white'}`}>
+                        {mistakesList.length}
+                      </span>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* ===================== 右侧核心视图工作区 ===================== */}
+              <div className="lg:col-span-8 flex flex-col min-h-0 flex-1 overflow-hidden mt-2 lg:mt-0">
+                
+                {/* TAB 1: 答题视口（支持顺序和随机） */}
+                {isQuizOrSeq && qObj && (
+                  <div className="flex-1 flex flex-col min-h-0 overflow-hidden gap-2">
+                    <div className="bg-white rounded-2xl md:rounded-3xl border border-[#E2E8F0] shadow-sm overflow-hidden flex-1 flex flex-col min-h-0 animate-fadeIn">
+                      
+                      {/* 卡片头部 */}
+                      <div className="px-3 py-2 md:px-5 md:py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="px-1.5 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] md:text-xs font-bold rounded-md border border-indigo-100 truncate">
+                            {qObj.c}
+                          </span>
+                          <span className={`px-1.5 py-0.5 text-[9px] md:text-[10px] font-semibold rounded-md border ${
+                            isSeq 
+                              ? "bg-amber-50 text-amber-700 border-amber-150" 
+                              : "bg-blue-50 text-blue-700 border-blue-150"
+                          }`}>
+                            {isSeq ? "顺序练习" : "随机抽题"}
+                          </span>
+                        </div>
+                        <span className="text-[10px] md:text-xs font-mono text-slate-500 shrink-0">
+                          {isSeq 
+                            ? `第 ${seqIndex + 1} 题 / 共 ${totalQuestions} 题` 
+                            : `进度: 第 ${currentPathIndex + 1} 题 (No.${qObj.id})`
+                          }
+                        </span>
+                      </div>
+
+                      {/* 局部滚动内容区域 - 字体适度调整减少移动端滑动 */}
+                      <div className="p-3 md:p-6 lg:p-7 flex-1 overflow-y-auto min-h-0 space-y-3 md:space-y-4 scroll-smooth">
+                        <div className="flex items-start justify-between gap-3 mb-1">
+                          <h3 className="text-[13px] sm:text-sm md:text-base lg:text-lg font-bold text-[#0F172A] leading-relaxed flex-1">
+                            <span className="text-indigo-600 font-mono font-bold mr-1.5">No.{qObj.id}</span>
+                            {qObj.s}
+                          </h3>
+                        </div>
+
+                        {/* 选项组 */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-2.5">
+                          {qObj.o.map((optText, index) => {
+                            const optLetter = OPTION_KEYS[index];
+                            const userChoice = answers[qObj.id];
+                            const hasAnswered = userChoice !== undefined;
+                            const isSelected = userChoice === optLetter;
+                            const isCorrect = optLetter === qObj.a;
+
+                            let btnStyle = "w-full text-left px-3 py-2 md:py-3.5 rounded-xl border-2 transition-all flex items-center justify-between gap-2 text-xs md:text-sm cursor-pointer ";
+                            let letterStyle = "w-5.5 h-5.5 md:w-6 md:h-6 shrink-0 flex items-center justify-center rounded-md font-bold text-[10px] md:text-[11px] font-mono transition-all ";
+
+                            if (hasAnswered) {
+                              if (isCorrect) {
+                                btnStyle += "border-green-300 bg-green-50 text-green-900 shadow-sm";
+                                letterStyle += "bg-green-600 text-white";
+                              } else if (isSelected) {
+                                btnStyle += "border-rose-300 bg-rose-50 text-rose-900 shadow-sm";
+                                letterStyle += "bg-rose-500 text-white";
+                              } else {
+                                btnStyle += "border-slate-100 bg-slate-50/50 text-slate-400";
+                                letterStyle += "bg-slate-205 text-slate-400";
+                              }
+                            } else {
+                              btnStyle += "border-slate-250 hover:border-indigo-400 hover:bg-indigo-50/20 text-slate-700 active:scale-98";
+                              letterStyle += "bg-slate-100 text-slate-500 group-hover:bg-indigo-600 group-hover:text-white";
+                            }
+
+                            return (
+                              <button
+                                key={optLetter}
+                                disabled={hasAnswered}
+                                onClick={() => handleSelectOption(optLetter, qObj.id)}
+                                className={`${btnStyle} group text-left flex items-start`}
+                              >
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className={letterStyle}>{optLetter}</span>
+                                  <span className="font-semibold leading-normal break-words text-[11px] md:text-xs lg:text-sm">{optText}</span>
+                                </div>
+                                {hasAnswered && isCorrect && <Icon name="check" className="w-3.5 h-3.5 text-green-650 shrink-0" />}
+                                {hasAnswered && isSelected && !isCorrect && <Icon name="x" className="w-3.5 h-3.5 text-rose-650 shrink-0" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* 答案与考点解析 */}
+                        {answers[qObj.id] !== undefined && (
+                          <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-2.5 md:p-5 mt-3 space-y-1 animate-fadeIn">
+                            <div className="flex items-center justify-between flex-wrap gap-2 text-[10px] md:text-xs">
+                              <div className="flex items-center gap-1 bg-white px-2 py-0.5 rounded-md border border-slate-200 font-bold text-slate-800 shadow-sm text-[9px] md:text-[11px]">
+                                <Icon name="check-circle" className="w-3.5 h-3.5 text-green-600" />
+                                <span>大纲官方考点解析</span>
+                              </div>
+                              <span>
+                                正标答案: <strong className="text-green-600 text-sm font-mono font-bold pl-1">{qObj.a}</strong>
+                              </span>
+                            </div>
+                            <p className="text-[11px] md:text-xs text-slate-600 leading-relaxed font-sans">{qObj.e}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 底栏功能键 */}
+                      <div className="px-3 py-2 md:px-5 md:py-3.5 bg-slate-50 border-t border-slate-100 flex flex-row items-center gap-2 md:gap-3 shrink-0">
+                        <button
+                          onClick={handlePrevQuestion}
+                          disabled={isSeq ? seqIndex <= 0 : currentPathIndex <= 0}
+                          className="flex-1 flex items-center justify-center gap-1 bg-white hover:bg-slate-100 border border-slate-250 text-slate-700 disabled:opacity-40 py-2 md:py-3 rounded-xl text-[11px] md:text-xs font-bold transition-all cursor-pointer disabled:cursor-not-allowed text-center"
+                        >
+                          <Icon name="chevron-left" className="w-3.5 h-3.5" />
+                          <span>上一题</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleRevealAnswer(qObj.id)}
+                          disabled={answers[qObj.id] !== undefined}
+                          className="flex-1 flex items-center justify-center gap-1 bg-yellow-50 hover:bg-yellow-100 border border-yellow-200 text-yellow-800 disabled:opacity-50 py-2 md:py-3 rounded-xl text-[11px] md:text-xs font-bold transition-all cursor-pointer disabled:cursor-not-allowed text-center"
+                        >
+                          <Icon name="help-circle" className="w-3.5 h-3.5" />
+                          <span>看答案</span>
+                        </button>
+
+                        <button
+                          onClick={handleNextQuestion}
+                          disabled={isSeq && seqIndex >= QUESTIONS_DATA.length - 1}
+                          className="flex-1 flex items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-40 disabled:cursor-not-allowed py-2 md:py-3 rounded-xl text-[11px] md:text-xs font-bold transition-all cursor-pointer text-center"
+                        >
+                          <span>下一题</span>
+                          <Icon name="chevron-right" className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 2: 错题本 */}
+                {activeTab === "mistakes" && (
+                  <div className="flex-1 bg-white p-4 md:p-6 rounded-2xl md:rounded-3xl border border-[#E2E8F0] shadow-sm flex flex-col min-h-0 overflow-hidden animate-fadeIn">
+                    <div className="pb-3 border-b border-rose-100 flex items-center justify-between flex-wrap gap-2 shrink-0">
+                      <div className="min-w-0">
+                        <h2 className="text-sm md:text-base font-bold text-slate-950 flex items-center gap-1.5 leading-none">
+                          <span className="p-0.5 px-2 bg-rose-100 text-rose-700 rounded-md text-[10px] md:text-xs font-semibold">错题</span>
+                          <span>错题复习本 ({mistakesList.length} 题)</span>
+                        </h2>
+                        <p className="text-[9px] md:text-xs text-slate-400 mt-1.5 leading-tight truncate">
+                          作答错误或直接寻求正确解析的题目。吃透错题方能登峰造极！
+                        </p>
+                      </div>
+
+                      {mistakesList.length > 0 && (
+                        <button
+                          onClick={handleClearAllMistakes}
+                          className="text-[10px] md:text-xs bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 px-2.5 py-1.5 rounded-lg transition-all font-semibold cursor-pointer shrink-0"
+                        >
+                          清空错题记录
+                        </button>
+                      )}
+                    </div>
+
+                    {/* 错题滚动列表 */}
+                    <div className="flex-1 flex flex-col min-h-0 overflow-y-auto mt-3 pr-0.5 space-y-3.5">
+                      {mistakesList.length === 0 ? (
+                        <div className="py-12 md:py-20 text-center text-[#94A3B8] flex flex-col items-center justify-center">
+                          <div className="w-10 h-10 md:w-12 md:h-12 bg-green-50 rounded-full flex items-center justify-center text-green-500 mb-3 border border-green-100 shadow-sm font-bold">
+                            ✓
+                          </div>
+                          <p className="text-xs md:text-sm font-semibold text-green-900 text-green-700">太棒了，目前没有任何错题记录！</p>
+                          <p className="text-[10px] md:text-xs mt-1.5 text-slate-400 max-w-sm px-4">
+                            在“顺序刷题”或“随机刷题”练习中做错或直接看答案的题，会自动归入该界面。
+                          </p>
+                          <button
+                            onClick={() => setActiveTab("sequential")}
+                            className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-md shadow-indigo-100"
+                          >
+                            去答题卡练习
+                          </button>
+                        </div>
+                      ) : (
+                        mistakesList.map((item) => {
+                          const userOpt = answers[item.id];
+                          return (
+                            <div
+                              key={item.id}
+                              className="p-3 md:p-4.5 bg-rose-50/20 border border-rose-100/80 rounded-xl space-y-2.5 flex flex-col justify-between"
+                            >
+                              <div>
+                                <div className="flex flex-wrap items-center gap-1.5 text-[9px] md:text-xs mb-1.5">
+                                  <span className="px-1.5 py-0.5 bg-rose-100 text-rose-800 font-mono font-bold rounded">
+                                    题号 No.{item.id}
+                                  </span>
+                                  <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full">
+                                    {item.c}
+                                  </span>
+                                  
+                                  <span className="ml-auto text-rose-700 font-mono">
+                                    你的解答: <strong>{userOpt === "GIVE_UP" ? "求助看答案" : userOpt}</strong>
+                                  </span>
+                                  <span className="text-green-700 font-mono pl-1.5 border-l border-rose-200 font-semibold">
+                                    标准正确: <strong>{item.a}</strong>
+                                  </span>
+                                </div>
+
+                                <h4 className="text-xs md:text-sm font-bold text-slate-900 leading-normal mb-2">
+                                  {item.s}
+                                </h4>
+
+                                <div className="grid grid-cols-2 gap-1 mb-2.5">
+                                  {item.o.map((opt, oIdx) => {
+                                    const optLetter = OPTION_KEYS[oIdx];
+                                    const isCorrect = optLetter === item.a;
+                                    const isSelected = userOpt === optLetter;
+                                    return (
+                                      <div
+                                        key={optLetter}
+                                        className={`px-2 py-1 rounded text-[10px] md:text-xs truncate ${
+                                          isCorrect
+                                            ? "bg-green-100/70 border border-green-250 text-green-900"
+                                            : isSelected
+                                            ? "bg-rose-100/70 border border-rose-250 text-rose-900"
+                                            : "bg-slate-50 text-slate-400 opacity-80"
+                                        }`}
+                                      >
+                                        <strong>{optLetter}.</strong> {opt}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+
+                                <div className="bg-white p-2.5 rounded-lg border border-rose-100/50 text-[10px] md:text-xs text-[#475569] leading-relaxed">
+                                  <strong className="text-slate-950 font-semibold block mb-0.5">教材考点必读解析：</strong>
+                                  {item.e}
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-between pt-2 border-t border-rose-100/45 mt-1">
+                                <span className="text-[9px] text-[#64748B] italic">
+                                  人工智能教学组课纲真题
+                                </span>
+                                
+                                <button
+                                  onClick={() => handleRetryQuestion(item.id)}
+                                  className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] md:text-xs font-semibold rounded-lg transition-all cursor-pointer shadow-sm active:scale-95"
+                                >
+                                  回题目重刷
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            </main>
+
+            {/* ===================== 手机端专属：底部输入框以及开发者信息 ===================== */}
+            <div className="lg:hidden shrink-0 mt-auto bg-white border-t border-slate-200 px-4 py-2 flex flex-col gap-1.5 z-20" onClick={(e) => e.stopPropagation()}>
+              
+              {/* 搜索层，搜索结果框向上浮动显示 */}
+              <div className="relative">
+                
+                {/* 手机端输入后的结果框：显示在输入框上方（bottom-full mb-1绝对定位），可以遮挡其他信息 */}
+                {isMSearchFocused && mQuery && (
+                   <div className="absolute left-0 right-0 bottom-full mb-1 max-h-44 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-xl z-50 divide-y divide-slate-100 animate-fadeIn">
+                    {mResults.length === 0 ? (
+                      <div className="p-3 text-xs text-slate-400 text-center">暂无搜索结果</div>
+                    ) : (
+                      mResults.map((item) => (
+                        <div
+                          key={item.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            jumpToQuestionId(item.id);
+                            setIsMSearchFocused(false);
+                            setMQuery("");
+                          }}
+                          className="p-2.5 hover:bg-slate-50 cursor-pointer text-left text-xs transition-all"
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-mono font-bold text-indigo-600 text-xs">No.{item.id}</span>
+                            <span className="text-[9px] bg-indigo-50 text-indigo-700 px-1 rounded font-medium">{item.c}</span>
+                          </div>
+                          <p className="text-slate-700 truncate">{item.s}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+
+                {/* 手机端搜索输入框 */}
+                <div className="relative flex items-center">
+                  <input
+                    type="text"
+                    value={mQuery}
+                    onChange={(e) => {
+                      setMQuery(e.target.value);
+                      setMResults(getFuzzyMatches(e.target.value));
+                    }}
+                    onFocus={(e) => {
+                      e.stopPropagation();
+                      setIsMSearchFocused(true);
+                    }}
+                    placeholder="输入关键字、考点等检索真题..."
+                    className="w-full pl-8 pr-8 py-1.5 bg-slate-50 border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 rounded-xl text-xs placeholder:text-slate-400 font-sans"
+                  />
+                  <span className="absolute left-2.5 flex items-center justify-center">
+                    <Icon name="search" className="w-3.5 h-3.5 text-slate-400" />
+                  </span>
+                  {mQuery && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMQuery("");
+                        setMResults([]);
+                      }}
+                      className="absolute right-2.5 flex items-center justify-center text-slate-400 hover:text-slate-600"
+                    >
+                      <Icon name="x" className="w-1.5 h-1.5" />
+                    </button>
+                  )}
+                </div>
+
+              </div>
+
+              {/* 手机端开发者信息 footer 层 - 扁平横向极简 */}
+              <div className="py-1 px-1 border-t border-slate-100/80 flex flex-row items-center justify-between text-slate-500 select-none shrink-0">
+                <div className="flex items-center gap-1.5 text-[10px] md:text-xs">
+                  <span className="text-[9px] font-mono font-bold bg-indigo-50 border border-indigo-120 text-indigo-600 px-1 rounded leading-none py-0.5">CC</span>
+                  <span>开发者：<strong className="text-slate-800 font-mono">小红书@最伟大的CC</strong></span>
+                </div>
+                <span className="text-[9px] text-green-600 font-mono font-bold flex items-center gap-1 scale-90 origin-right">
+                  <span className="w-1 h-1 rounded-full bg-green-500 animate-pulse"></span>
+                  100% 离线部署
+                </span>
+              </div>
+
             </div>
-          `;
-      }).join("");
-    }
 
-    // Handler when user selects a search outcome
-    function selectFuzzySearchResult(id, containerId) {
-      jumpToQuestionId(id);
-
-      // Hide dropdown
-      const container = document.getElementById(containerId);
-      if (container) {
-        container.classList.add("hidden");
+          </div>
+        );
       }
 
-      // Clear input values
-      const searchInput = document.getElementById("fuzzy-search-input");
-      if (searchInput) searchInput.value = "";
-      const searchInputMobile = document.getElementById("fuzzy-search-input-mobile");
-      if (searchInputMobile) searchInputMobile.value = "";
-    }
-
-    // Close dropdowns when clicking outside
-    document.addEventListener("click", function (event) {
-      const dInput = document.getElementById("fuzzy-search-input");
-      const dContainer = document.getElementById("fuzzy-search-results");
-      const mInput = document.getElementById("fuzzy-search-input-mobile");
-      const mContainer = document.getElementById("fuzzy-search-results-mobile");
-
-      if (dInput && dContainer && !dInput.contains(event.target) && !dContainer.contains(event.target)) {
-        dContainer.classList.add("hidden");
-      }
-      if (mInput && mContainer && !mInput.contains(event.target) && !mContainer.contains(event.target)) {
-        mContainer.classList.add("hidden");
-      }
-    });
-
-    // Standard central controller initiator
-    function renderActiveView() {
-      if (activeTab === "quiz") {
-        renderQuestionBody();
-      } else {
-        renderMistakesList();
-      }
-      updateStatsUI();
-    }
-
-    // Boot application right away
-    window.onload = initAppState;
-  </script>
-</body>
-
+      // 挂载
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(<App />);
+    </script>
+  </body>
 </html>
