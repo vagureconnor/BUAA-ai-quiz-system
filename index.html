@@ -1382,7 +1382,13 @@
                         </span>
                         {isReview ? (
                           <>
-                            <button onClick={() => handleMarkStar(qObj.id)} disabled={isCurrentStarred || isAllCompleted} className={`inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg text-[11px] md:text-xs font-bold transition-all cursor-pointer active:scale-95 disabled:cursor-not-allowed ${isCurrentStarred ? "bg-amber-100 border border-amber-200 text-amber-500 opacity-70" : "bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700"}`} title={isCurrentStarred ? "已标熟" : "标熟"}>
+                            <button 
+                              onClick={() => handleMarkStar(qObj.id)} 
+                              // 【修改】增加 isAllCompleted 判断，通关后硬性禁用此按钮
+                              disabled={isCurrentStarred || isAllCompleted} 
+                              className={`inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg text-[11px] md:text-xs font-bold transition-all cursor-pointer active:scale-95 disabled:cursor-not-allowed ${isAllCompleted ? "bg-slate-100 border border-slate-200 text-slate-400 opacity-60" : isCurrentStarred ? "bg-amber-100 border border-amber-200 text-amber-500 opacity-70" : "bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700"}`} 
+                              title={isAllCompleted ? "所有题目已完成" : isCurrentStarred ? "已标熟" : "标熟：以后不再出现在刷题界面"}
+                            >
                               <Icon name="star" className="w-3.5 h-3.5" />
                               <span className="hidden md:inline">{isCurrentStarred ? "已标熟" : "标熟"}</span>
                             </button>
@@ -1392,7 +1398,13 @@
                             </button>
                           </>
                         ) : (
-                          <button onClick={() => handleMarkStar(qObj.id)} disabled={(isCurrentStarred && manualQuestionId === null) || isAllCompleted} className={`inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg text-[11px] md:text-xs font-bold transition-all cursor-pointer active:scale-95 disabled:cursor-not-allowed ${isCurrentStarred ? "bg-amber-100 border border-amber-200 text-amber-500 opacity-70" : "bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700"}`} title="标熟">
+                          <button 
+                            onClick={() => handleMarkStar(qObj.id)} 
+                            // 【修改】增加 isAllCompleted 判断，通关后硬性禁用此按钮
+                            disabled={(isCurrentStarred && manualQuestionId === null) || isAllCompleted} 
+                            className={`inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg text-[11px] md:text-xs font-bold transition-all cursor-pointer active:scale-95 disabled:cursor-not-allowed ${isAllCompleted ? "bg-slate-100 border border-slate-200 text-slate-400 opacity-60" : isCurrentStarred ? "bg-amber-100 border border-amber-200 text-amber-500 opacity-70" : "bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700"}`} 
+                            title={isAllCompleted ? "所有题目已完成" : isCurrentStarred ? "已标熟：只能通过搜索查看" : "标熟：以后不再出现在刷题界面"}
+                          >
                             <Icon name="star" className="w-3.5 h-3.5" />
                             <span className="hidden md:inline">{isCurrentStarred ? "已标熟" : "标熟"}</span>
                           </button>
